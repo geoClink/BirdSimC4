@@ -14,6 +14,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     var viewModel: MainGameView.ViewModel?
     var isSceneTransitioning = false
     private var backgroundNode: SKSpriteNode?
+    private var targetNestID: String?
 
     
     // --- Win/Loss Tracking ---
@@ -42,6 +43,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         // This ensures the joystick and inventory disappear immediately
         viewModel?.controlsAreVisable = false
         viewModel?.mapIsVisable = false
+        targetNestID = viewModel?.activeNestID
         
         self.scaleMode = .aspectFit
         
@@ -292,7 +294,13 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         
         HapticManager.shared.trigger(success ? .heavy : .error)
         
-        if success { viewModel?.incrementFeedingForCurrentNest() }
+        if success {
+            if let targetNestID {
+                viewModel?.incrementFeeding(forNestID: targetNestID)
+            } else {
+                viewModel?.incrementFeedingForCurrentNest()
+            }
+        }
         
         var message = success ? "WELL FED!" : "TOO SLOW!"
         if !success && timeLeft <= 0 {

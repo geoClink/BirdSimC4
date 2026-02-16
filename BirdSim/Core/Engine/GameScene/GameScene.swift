@@ -385,10 +385,23 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 var closestNest: SKNode? = nil
                 var minNestDist: CGFloat = 120 // Sensitivity radius
                 
-                // Search specifically for nest nodes
-                for node in children where node.name == "final_nest" || node.name == "nest_active" {
-                    let dx = player.position.x - node.position.x
-                    let dy = player.position.y - node.position.y
+                // Search specifically for nest nodes (including those nested under trees)
+                enumerateChildNodes(withName: "//final_nest") { node, _ in
+                    let worldPos = node.parent?.convert(node.position, to: self) ?? node.position
+                    let dx = player.position.x - worldPos.x
+                    let dy = player.position.y - worldPos.y
+                    let dist = sqrt(dx * dx + dy * dy)
+                    
+                    if dist < minNestDist {
+                        minNestDist = dist
+                        closestNest = node
+                    }
+                }
+                
+                enumerateChildNodes(withName: "//nest_active") { node, _ in
+                    let worldPos = node.parent?.convert(node.position, to: self) ?? node.position
+                    let dx = player.position.x - worldPos.x
+                    let dy = player.position.y - worldPos.y
                     let dist = sqrt(dx * dx + dy * dy)
                     
                     if dist < minNestDist {
@@ -406,6 +419,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                         
                         // IMPORTANT: Tell the ViewModel exactly WHICH nest this is
                         viewModel?.activeNestNode = nest
+                        viewModel?.activeNestID = (nest.userData?["nestID"] as? String)
                         
                     } else {
                         // Nest exists but no baby (Priority 2: Nest Status)
@@ -547,10 +561,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                             let bottom = CGPoint(x: frame.midX, y: frame.minY)
                             self.viewModel?.pendingNestWorldPosition = bottom
                             self.viewModel?.pendingNestAnchorTreeName = node.name
+                            self.viewModel?.pendingNestAnchorTreeID = node.userData?["treeID"] as? String
                         } else if let player = self.childNode(withName: "userBird") {
                             let (tree, bottomPoint) = self.nearestTreeBase(from: player.position)
                             self.viewModel?.pendingNestWorldPosition = bottomPoint ?? player.position
                             self.viewModel?.pendingNestAnchorTreeName = tree?.name
+                            self.viewModel?.pendingNestAnchorTreeID = tree?.userData?["treeID"] as? String
                         }
 
                         transitionToBuildNestScene()
@@ -592,10 +608,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
                     // --- MULTI-NEST LOGIC START ---
                     // 1. Identify the specific nest. If the user tapped the baby, the nest is its parent.
-                    let specificNest = (node.name == "babyBird") ? node.parent : node
-                    
-                    // 2. Tell the ViewModel: "This is the nest we are currently feeding"
-                    viewModel?.activeNestNode = specificNest
+                    if node.name == "babyBird" {
+                        viewModel?.activeNestNode = node.parent
+                        viewModel?.activeNestID = (node.parent?.userData?["nestID"] as? String)
+                    } else {
+                        // feedBabyBirdMini is just a trigger, so find the nearest actual nest
+                        if let player = self.childNode(withName: "userBird") {
+                            let nearestNest = closestNest(to: player.position) ?? viewModel?.activeNestNode
+                            viewModel?.activeNestNode = nearestNest
+                            viewModel?.activeNestID = (nearestNest?.userData?["nestID"] as? String) ?? viewModel?.activeNestID
+                        }
+                    }
                     // --- MULTI-NEST LOGIC END ---
 
                     transitionToFeedBabyScene()
@@ -697,11 +720,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
 
 } // End of GameScene Class
-
-
-
-
-
 
 
 

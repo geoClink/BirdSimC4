@@ -219,9 +219,14 @@ extension GameScene {
     func spawnTree(position: CGPoint, size: CGSize, assetName: String, zPosition: Int) {
         let spot = SKSpriteNode(imageNamed: assetName)
         spot.position = position
-        spot.name = assetName
+        let treeID = UUID().uuidString
+        spot.name = "\(assetName)_\(treeID)"
         spot.size = size
         spot.zPosition = CGFloat(zPosition)
+        let data = NSMutableDictionary()
+        data["treeID"] = treeID
+        data["treeType"] = assetName
+        spot.userData = data
         addChild(spot)
     }
         
@@ -238,7 +243,12 @@ extension GameScene {
     func setupBuildNestTree(in position: CGPoint) {
         let tree = SKSpriteNode(imageNamed: "tree1")
         tree.position = position
-        tree.name = "\(buildNestMini)_\(UUID().uuidString)"
+        let treeID = UUID().uuidString
+        tree.name = "\(buildNestMini)_\(treeID)"
+        let data = NSMutableDictionary()
+        data["treeID"] = treeID
+        data["treeType"] = "tree1"
+        tree.userData = data
         
         
         if viewModel?.tutorialIsOn == true {

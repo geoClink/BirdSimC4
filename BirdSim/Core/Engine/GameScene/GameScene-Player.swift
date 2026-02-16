@@ -150,6 +150,31 @@ extension GameScene {
         guard let node = self.childNode(withName: nodeName) else { return false }
         return hypot(player.position.x - node.position.x, player.position.y - node.position.y) < threshold
     }
+    
+    func closestNest(to point: CGPoint) -> SKNode? {
+        var closest: SKNode?
+        var minDistance: CGFloat = .greatestFiniteMagnitude
+        
+        enumerateChildNodes(withName: "//final_nest") { node, _ in
+            let worldPos = node.parent?.convert(node.position, to: self) ?? node.position
+            let distance = hypot(point.x - worldPos.x, point.y - worldPos.y)
+            if distance < minDistance {
+                minDistance = distance
+                closest = node
+            }
+        }
+        
+        enumerateChildNodes(withName: "//nest_active") { node, _ in
+            let worldPos = node.parent?.convert(node.position, to: self) ?? node.position
+            let distance = hypot(point.x - worldPos.x, point.y - worldPos.y)
+            if distance < minDistance {
+                minDistance = distance
+                closest = node
+            }
+        }
+        
+        return closest
+    }
 
     // MARK: - Player Spawn & Texture
     func setupUserBird(in tutorial: Bool) {
@@ -225,8 +250,10 @@ extension GameScene {
         // Flight check: Grounded only
         guard !viewModel.isFlying else { return }
 
-        // 1) Feed Baby (Check distance to baby or feeding spot)
-        if checkDistance(to: "babyBird", threshold: 200) {
+        // 1) Feed Baby (find nearest baby and bind to its nest)
+        if let (babyNest, _) = nearestBabyNest(from: player.position, threshold: 200) {
+            viewModel.activeNestNode = babyNest
+            viewModel.activeNestID = babyNest.userData?["nestID"] as? String
             triggerMiniGame(scene: .feedBaby)
             return
         }
@@ -236,7 +263,8 @@ extension GameScene {
         var bestNestDist: CGFloat = 220
         for node in children {
             if (node.name?.hasPrefix(buildNestMini) ?? false) || node.name == "final_nest" {
-                let dist = hypot(player.position.x - node.position.x, player.position.y - node.position.y)
+                let worldPos = node.parent?.convert(node.position, to: self) ?? node.position
+                let dist = hypot(player.position.x - worldPos.x, player.position.y - worldPos.y)
                 if dist < bestNestDist {
                     bestNestDist = dist
                     nearestNestNode = node
@@ -257,6 +285,7 @@ extension GameScene {
                 let materials = ["stick", "leaf", "spiderweb", "dandelion"]
                 if materials.allSatisfy({ items.contains($0) }) {
                     viewModel.pendingNestAnchorTreeName = target.name
+                    viewModel.pendingNestAnchorTreeID = target.userData?["treeID"] as? String
                     triggerMiniGame(scene: .buildNest)
                     return
                 }
@@ -287,7 +316,8 @@ extension GameScene {
         var bestItemDist: CGFloat = 200
         for node in children {
             if let name = node.name, itemsToPick.contains(name) {
-                let dist = hypot(player.position.x - node.position.x, player.position.y - node.position.y)
+                let worldPos = node.parent?.convert(node.position, to: self) ?? node.position
+                let dist = hypot(player.position.x - worldPos.x, player.position.y - worldPos.y)
                 if dist < bestItemDist {
                     bestItemDist = dist
                     closestItem = node
@@ -295,6 +325,26 @@ extension GameScene {
             }
         }
         if let item = closestItem { pickupItem(item); return }
+    }
+
+    private func nearestBabyNest(from position: CGPoint, threshold: CGFloat) -> (SKNode, CGFloat)? {
+        var bestNest: SKNode?
+        var bestDist: CGFloat = threshold
+        
+        enumerateChildNodes(withName: "//babyBird") { node, _ in
+            guard let nest = node.parent else { return }
+            let babyWorldPos = node.parent?.convert(node.position, to: self) ?? node.position
+            let dist = hypot(position.x - babyWorldPos.x, position.y - babyWorldPos.y)
+            if dist < bestDist {
+                bestDist = dist
+                bestNest = nest
+            }
+        }
+        
+        if let bestNest {
+            return (bestNest, bestDist)
+        }
+        return nil
     }
 
     // MARK: - UI Helpers
@@ -336,4 +386,3 @@ extension GameScene {
         return false
     }
 }
-
