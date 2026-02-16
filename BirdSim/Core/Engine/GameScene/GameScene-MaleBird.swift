@@ -78,8 +78,7 @@ extension GameScene {
 
         let count = 10
         for _ in 0..<count {
-            let heart = SKLabelNode(text: "❤️")
-            heart.fontSize = 36
+            let heart = SKSpriteNode(imageNamed: "heart")
             heart.alpha = 0
             heart.setScale(0.8)
             heart.zPosition = 1001

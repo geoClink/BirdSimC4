@@ -1,11 +1,11 @@
 {
   "images" : [
     {
-      "filename" : "hifi_spider.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "heart.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
