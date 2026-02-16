@@ -247,8 +247,13 @@ extension GameScene {
         
         
         
-        // Flight check: Grounded only
-        guard !viewModel.isFlying else { return }
+        // Allow leave island while flying, block other interactions in air
+        if viewModel.isFlying {
+            if isNearLeaveIsland(player: player) {
+                triggerMiniGame(scene: .leaveIsland)
+            }
+            return
+        }
 
         // 1) Feed Baby (find nearest baby and bind to its nest)
         if let (babyNest, _) = nearestBabyNest(from: player.position, threshold: 200) {
@@ -293,20 +298,14 @@ extension GameScene {
         }
 
         // 3) Feed Self / Leave Island
-        let interactionSpots = [(feedUserBirdMini, "feed"), (leaveIslandMini, "leave")]
-        for (name, type) in interactionSpots {
-            var isNearAny = false
-            self.enumerateChildNodes(withName: name) { node, stop in
-                let dist = hypot(player.position.x - node.position.x, player.position.y - node.position.y)
-                if dist <= 220 {
-                    isNearAny = true
-                    stop.pointee = true // stop enumerating once we found a nearby node
-                }
-            }
-            if isNearAny {
-                type == "feed" ? triggerMiniGame(scene: .feedUser) : triggerMiniGame(scene: .leaveIsland)
-                return
-            }
+        if isNearNode(named: feedUserBirdMini, player: player, threshold: 220) {
+            triggerMiniGame(scene: .feedUser)
+            return
+        }
+        
+        if isNearLeaveIsland(player: player) {
+            triggerMiniGame(scene: .leaveIsland)
+            return
         }
         
 
@@ -325,6 +324,22 @@ extension GameScene {
             }
         }
         if let item = closestItem { pickupItem(item); return }
+    }
+    
+    private func isNearNode(named name: String, player: SKNode, threshold: CGFloat) -> Bool {
+        var isNearAny = false
+        enumerateChildNodes(withName: name) { node, stop in
+            let dist = hypot(player.position.x - node.position.x, player.position.y - node.position.y)
+            if dist <= threshold {
+                isNearAny = true
+                stop.pointee = true
+            }
+        }
+        return isNearAny
+    }
+    
+    private func isNearLeaveIsland(player: SKNode) -> Bool {
+        return isNearNode(named: leaveIslandMini, player: player, threshold: 220)
     }
 
     private func nearestBabyNest(from position: CGPoint, threshold: CGFloat) -> (SKNode, CGFloat)? {
