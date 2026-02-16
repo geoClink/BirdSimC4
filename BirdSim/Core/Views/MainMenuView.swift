@@ -13,10 +13,17 @@ struct MainMenuView: View {
     @State private var showingSettings = false
     @AppStorage("showingInstructions") var showingInstructions = true
 
-    
     let container: ModelContainer
     let onStartNewGame: () -> Void
     let onResumeGame: () -> Void
+    @StateObject private var viewModel: MainGameView.ViewModel
+
+    init(container: ModelContainer, onStartNewGame: @escaping () -> Void, onResumeGame: @escaping () -> Void) {
+        self.container = container
+        self.onStartNewGame = onStartNewGame
+        self.onResumeGame = onResumeGame
+        _viewModel = StateObject(wrappedValue: MainGameView.ViewModel(context: container.mainContext))
+    }
     
     var hasSavedGame: Bool {
         (try? container.mainContext.fetch(FetchDescriptor<GameState>()).isEmpty == false) ?? false
@@ -106,7 +113,7 @@ struct MainMenuView: View {
                 SettingsView()
             }
             .sheet(isPresented: $showingInstructions) {
-                HowToPlayView()
+                HowToPlayView(viewModel: viewModel, onStartNewGame: onStartNewGame)
             }
         }
     }

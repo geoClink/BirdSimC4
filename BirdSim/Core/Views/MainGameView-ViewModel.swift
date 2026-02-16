@@ -53,7 +53,7 @@ extension MainGameView {
         
         @Published var collectedItemsArray: [ImageResource] = []
         
-        @Published var tutorialIsOn: Bool = true
+        @Published var tutorialIsOn: Bool = false
         
         @Published var inventoryFullOnce: Bool = false
         @Published var pickedUpOnce: Bool = false

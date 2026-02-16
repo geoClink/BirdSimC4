@@ -9,7 +9,12 @@ import SwiftUI
 
 // MARK: - Main View
 struct HowToPlayView: View {
+    @ObservedObject var viewModel: MainGameView.ViewModel
     @Environment(\.dismiss) private var dismiss
+    
+    let onStartNewGame: () -> Void
+
+    
     
     var body: some View {
         NavigationStack {
@@ -209,12 +214,28 @@ struct HowToPlayView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Skip") {
+                        dismiss()
+                        viewModel.tutorialIsOn = false
+                    }
+                }
+                
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Ready to Fly") { dismiss() }
+                    Button("Start Tutorial") {
+                        dismiss()
+                        startTutorial()
+                    }
                         .fontWeight(.bold)
                 }
             }
         }
+    }
+    func startTutorial() {
+        viewModel.tutorialIsOn = true
+        
+        onStartNewGame()
+
     }
 }
 
