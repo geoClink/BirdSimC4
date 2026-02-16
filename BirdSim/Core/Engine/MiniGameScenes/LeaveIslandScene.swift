@@ -10,6 +10,8 @@ import GameController
 
 class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     var viewModel: MainGameView.ViewModel?
+    private var backgroundNode: SKSpriteNode?
+
     var bird = SKSpriteNode(imageNamed: "User_BirdFlappy")
     private var isGameOver = false
     private var gameStarted = false
@@ -35,6 +37,7 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         self.physicsWorld.gravity = CGVector(dx: 0, dy: -unit * 0.01)
         self.physicsWorld.contactDelegate = self
         
+        setupBackground()
         setupBird()
         setupTimerLabel()
         
@@ -166,23 +169,41 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         viewModel?.showGameWin = true
     }
     
+    
+    func setupBackground() {
+        if let bg = backgroundNode {
+            bg.size = self.size
+            bg.position = CGPoint(x: frame.midX, y: frame.midY)
+            return
+        }
+        let backgroundtexture = SKTexture(image: .street)
+        let background = SKSpriteNode(texture: backgroundtexture)
+        background.zPosition = -100
+        background.size = self.size
+        background.position = CGPoint(x: frame.midX, y: frame.midY)
+        addChild(background)
+        backgroundNode = background
+    }
+
     func setupObstacles() {
         let spawn = SKAction.run { [weak self] in self?.createObstaclePair() }
         let delay = SKAction.wait(forDuration: 1.5)
         run(SKAction.repeatForever(SKAction.sequence([spawn, delay])), withKey: "pipeSpawn")
     }
     
+    
+    
     func createObstaclePair() {
-        let gapHeight = unit * 0.3
+        let gapHeight = unit * 0.001
         let pipeWidth = unit * 0.12
         let pipeHeight = unit
         let randomCenterY = CGFloat.random(in: (unit * 0.2)...(unit * 0.8))
             
-        let bottomPipe = SKSpriteNode(color: .systemGreen, size: CGSize(width: pipeWidth, height: pipeHeight))
+        let bottomPipe = SKSpriteNode(imageNamed: pipeType(at: false))
         bottomPipe.position = CGPoint(x: size.width + pipeWidth, y: randomCenterY - (gapHeight / 2) - (pipeHeight / 2))
         setupObstaclePhysics(bottomPipe)
             
-        let topPipe = SKSpriteNode(color: .systemGreen, size: CGSize(width: pipeWidth, height: pipeHeight))
+        let topPipe = SKSpriteNode(imageNamed: pipeType(at: true))
         topPipe.position = CGPoint(x: size.width + pipeWidth, y: randomCenterY + (gapHeight / 2) + (pipeHeight / 2))
         setupObstaclePhysics(topPipe)
             
@@ -200,5 +221,14 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         obstacle.physicsBody?.isDynamic = false
         obstacle.physicsBody?.categoryBitMask = pipeCategory
         obstacle.physicsBody?.contactTestBitMask = birdCategory
+    }
+    
+    func pipeType(at isTop: Bool) -> String {
+        let topPipe = "hellcat"
+        let bottomPipe = "lightPole"
+
+        return isTop ? topPipe : bottomPipe
+        
+        
     }
 }
