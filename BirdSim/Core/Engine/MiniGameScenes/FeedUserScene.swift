@@ -11,6 +11,9 @@ import GameController
 class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     var viewModel: MainGameView.ViewModel?
     
+    private var backgroundNode: SKSpriteNode?
+
+    
     // --- Input Modes ---
     enum InputMode {
         case keyboard // Renamed for clarity since it's the primary load-in mode
@@ -46,6 +49,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         physicsWorld.gravity = CGVector(dx: 0, dy: -3.0)
         physicsWorld.contactDelegate = self
         
+        setupBackground()
         setupPlayer()
         setupUI()
         setupAccelerometer() // Starts in background, but won't move player until toggled
@@ -153,6 +157,23 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         player.physicsBody?.contactTestBitMask = goodItemCategory | badItemCategory
         addChild(player)
     }
+    
+    
+    func setupBackground() {
+        if let bg = backgroundNode {
+            bg.size = self.size
+            bg.position = CGPoint(x: frame.midX, y: frame.midY)
+            return
+        }
+        let backgroundtexture = SKTexture(image: .grass)
+        let background = SKSpriteNode(texture: backgroundtexture)
+        background.zPosition = -100
+        background.size = self.size
+        background.position = CGPoint(x: frame.midX, y: frame.midY)
+        addChild(background)
+        backgroundNode = background
+    }
+
 
     private func setupAccelerometer() {
         if motionManager.isAccelerometerAvailable {
