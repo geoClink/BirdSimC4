@@ -11,14 +11,25 @@ extension GameScene {
     
     /// Returns the next available nest that does not already contain a baby.
     func nextEmptyNest() -> SKNode? {
-        for node in children.reversed() {
-            if node.name == "final_nest" || node.name == "nest_active" {
-                if node.childNode(withName: "babyBird") == nil {
-                    return node
-                }
+        var found: SKNode?
+
+        enumerateChildNodes(withName: "//final_nest") { node, stop in
+            if node.childNode(withName: "babyBird") == nil {
+                found = node
+                stop.pointee = true
             }
         }
-        return nil
+
+        if found != nil { return found }
+
+        enumerateChildNodes(withName: "//nest_active") { node, stop in
+            if node.childNode(withName: "babyBird") == nil {
+                found = node
+                stop.pointee = true
+            }
+        }
+
+        return found
     }
     
     func feedSpecificBaby(nest: SKNode) {
