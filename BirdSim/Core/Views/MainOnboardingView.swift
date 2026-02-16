@@ -43,7 +43,7 @@ struct MainOnboardingView: View {
                 let totalWidth = proxy.size.width
                 let spacing: CGFloat = 12
                 let hasMultiple = resources.count > 1
-                let maxCardWidth: CGFloat = hasMultiple ? 120 : 190
+                let maxCardWidth: CGFloat = hasMultiple ? 95 : 190
                 let cardWidth = min(maxCardWidth, totalWidth - 24)
                 let heightScale: CGFloat = hasMultiple ? 0.72 : 0.58
                 
