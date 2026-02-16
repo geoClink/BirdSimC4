@@ -16,21 +16,25 @@ extension GameScene {
         vm.mapIsVisable = false
         vm.joystickVelocity = .zero
 
-        // Present scene first
         let scene = LeaveIslandScene(size: view.bounds.size)
         scene.scaleMode = .resizeFill
         scene.viewModel = vm
         view.presentScene(scene, transition: SKTransition.fade(withDuration: 0.5))
 
-        // Pause scene, store it, and show instructions
-        // Pause scene completely while instructions are visible
+        // Freeze the scene initially
         scene.isPaused = true
         scene.isUserInteractionEnabled = false
         scene.speed = 0.0
         scene.physicsWorld.speed = 0.0
         vm.currentMiniGameScene = scene
-        vm.showMiniGameInstructions(type: .leaveIsland, startAction: { }, cancelAction: { [weak self] in
-            // Return back to the main world if canceled
+
+        // Pass the unfreeze logic into the startAction
+        vm.showMiniGameInstructions(type: .leaveIsland, startAction: { [weak scene] in
+            // When the SwiftUI button is pressed, this runs:
+            if let leaveScene = scene as? LeaveIslandScene {
+                leaveScene.startGame()
+            }
+        }, cancelAction: { [weak self] in
             self?.returnFromMiniGame()
         })
     }

@@ -9,40 +9,67 @@ import SpriteKit
 
 extension GameScene {
     func spawnMaleBird() {
-            if childNode(withName: "MaleBird") != nil { return }
-            
-            let maleBird = SKSpriteNode(imageNamed: "Predator/MaleBird")
-            maleBird.name = "MaleBird"
-            maleBird.size = CGSize(width: 200, height: 200)
-            maleBird.zPosition = 100
-            
-            // Position him somewhere random but far enough away to be a "quest"
-            let randomX = CGFloat.random(in: 500...1000) * (Bool.random() ? 1 : -1)
-            let randomY = CGFloat.random(in: 500...1000) * (Bool.random() ? 1 : -1)
-            maleBird.position = CGPoint(x: randomX, y: randomY)
-            
-            // Physics for contact detection
-            maleBird.physicsBody = SKPhysicsBody(circleOfRadius: 25)
-            maleBird.physicsBody?.isDynamic = false
-            maleBird.physicsBody?.categoryBitMask = PhysicsCategory.mate
-            maleBird.physicsBody?.contactTestBitMask = PhysicsCategory.player
-            maleBird.physicsBody?.collisionBitMask = PhysicsCategory.none
-        maleBird.physicsBody?.categoryBitMask = PhysicsCategory.mate
-        // The male bird must be looking for the player
-        maleBird.physicsBody?.contactTestBitMask = PhysicsCategory.player
+        if childNode(withName: "MaleBird") != nil { return }
         
-        // Face right initially
-        maleBird.xScale = abs(maleBird.xScale)
-        maleBird.zRotation = -(.pi / 2)
-
-        // Simple back-and-forth motion. Facing is handled per-frame by `updatePredatorFacingDirections()`.
-        let moveRight = SKAction.moveBy(x: 1000, y: 0, duration: 12)
-        let moveLeft  = moveRight.reversed()
-        let sequence = SKAction.sequence([moveRight, moveLeft])
-        maleBird.run(SKAction.repeatForever(sequence))
-            addChild(maleBird)
-            attachIdleHearts(to: maleBird)
+        let maleBird = SKSpriteNode(imageNamed: "Predator/MaleBird")
+        maleBird.name = "MaleBird"
+        maleBird.size = CGSize(width: 200, height: 200)
+        maleBird.zPosition = 100
+        
+        // Initial random position
+        let randomX = CGFloat.random(in: 500...1000) * (Bool.random() ? 1 : -1)
+        let randomY = CGFloat.random(in: 500...1000) * (Bool.random() ? 1 : -1)
+        maleBird.position = CGPoint(x: randomX, y: randomY)
+        
+        // Physics
+        maleBird.physicsBody = SKPhysicsBody(circleOfRadius: 25)
+        maleBird.physicsBody?.isDynamic = false
+        maleBird.physicsBody?.categoryBitMask = PhysicsCategory.mate
+        maleBird.physicsBody?.contactTestBitMask = PhysicsCategory.player
+        maleBird.physicsBody?.collisionBitMask = PhysicsCategory.none
+        
+        addChild(maleBird)
+        attachIdleHearts(to: maleBird)
+        
+        // Start the random wandering behavior
+        makeBirdWander(maleBird)
+    }
+    func makeBirdWander(_ bird: SKNode) {
+        let choice = Int.random(in: 0...2)
+        var action: SKAction
+        
+        switch choice {
+        case 0: // 1. Fly Forward
+            let distance = CGFloat.random(in: 200...400)
+            // Calculate vector based on current rotation
+            let angle = bird.zRotation + .pi/2 // Offset because your bird faces up by default
+            let dx = cos(angle) * distance
+            let dy = sin(angle) * distance
+            action = SKAction.moveBy(x: dx, y: dy, duration: Double.random(in: 2.0...4.0))
+            
+        case 1: // 2. Turn Left or Right
+            let randomAngle = CGFloat.random(in: .pi/4...(.pi)) * (Bool.random() ? 1 : -1)
+            action = SKAction.rotate(byAngle: randomAngle, duration: Double.random(in: 1.0...2.0))
+            
+        default: // 3. Fly in a Circle
+            let radius = CGFloat.random(in: 100...200)
+            let direction: CGFloat = Bool.random() ? 1 : -1
+            let circlePath = UIBezierPath(arcCenter: .zero,
+                                          radius: radius,
+                                          startAngle: 0,
+                                          endAngle: .pi * 2 * direction,
+                                          clockwise: Bool.random())
+            action = SKAction.follow(circlePath.cgPath, asOffset: true, orientToPath: true, duration: 5.0)
         }
+        
+        // Run the action, then wait a moment and decide the next move
+        let wait = SKAction.wait(forDuration: 0.5)
+        let nextMove = SKAction.run { [weak self] in
+            self?.makeBirdWander(bird)
+        }
+        
+        bird.run(SKAction.sequence([action, wait, nextMove]), withKey: "wanderLoop")
+    }
     
     // Call this to show a one-shot heart burst at a given position in world space.
     func playMatingHearts(at worldPosition: CGPoint) {

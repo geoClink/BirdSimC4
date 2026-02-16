@@ -6,20 +6,26 @@
 //
 
 import SpriteKit
-import GameController // Required for Keyboard support
+import GameController
 
 class PredatorGame: SKScene {
     var viewModel: MainGameView.ViewModel?
     var dismissAction: (() -> Void)?
     
+    // State Tracking
+    private enum GameState { case waiting, countingDown, playing }
+    private var currentState: GameState = .waiting
+    private var isResolved = false
+    private var timeLeft = 10
+    
     // Mini-game nodes
     private let bar = SKSpriteNode(color: .darkGray, size: CGSize(width: 600, height: 40))
     private let needle = SKSpriteNode(color: .white, size: CGSize(width: 8, height: 80))
     private let timerLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+    private let countdownLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+    private let instructionLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
     
     private var dangerZones: [SKSpriteNode] = []
-    private var isResolved = false
-    private var timeLeft = 10
 
     override func didMove(to view: SKView) {
         HapticManager.shared.prepare()
@@ -27,35 +33,78 @@ class PredatorGame: SKScene {
         backgroundColor = .black
         
         setupTimingBar()
-        setupTimer()
-        startNeedleMovement()
+        // Notice: we do NOT call setupTimer or startNeedleMovement here anymore
     }
     
     // MARK: - Input Handling
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if viewModel?.minigameStarted == true && viewModel?.showMiniGameSheet == false {
-            attemptResolve()
-        }
+        handleInput()
     }
 
     override func update(_ currentTime: TimeInterval) {
-        // Check for Space Bar press via GameController
         if let keyboard = GCKeyboard.coalesced?.keyboardInput {
             if keyboard.button(forKeyCode: .spacebar)?.isPressed == true {
-                if viewModel?.minigameStarted == true && viewModel?.showMiniGameSheet == false {
-                    attemptResolve()
-                }
+                handleInput()
             }
         }
     }
 
-    /// Shared logic for both Space Bar and Touch
+    private func handleInput() {
+        // Prevent input if sheets are showing
+        guard viewModel?.showMiniGameSheet == false else { return }
+
+        switch currentState {
+        case .waiting:
+            startCountdown()
+        case .playing:
+            attemptResolve()
+        case .countingDown:
+            break // Ignore inputs during the 3-2-1 sequence
+        }
+    }
+
+    private func startCountdown() {
+        currentState = .countingDown
+        instructionLabel.run(SKAction.fadeOut(withDuration: 0.3))
+        
+        countdownLabel.fontSize = 80
+        countdownLabel.fontColor = .systemYellow
+        countdownLabel.position = CGPoint(x: frame.midX, y: frame.midY + 50)
+        countdownLabel.zPosition = 300
+        addChild(countdownLabel)
+        
+        var count = 3
+        let wait = SKAction.wait(forDuration: 0.8)
+        let tick = SKAction.run { [weak self] in
+            guard let self = self else { return }
+            if count > 0 {
+                self.countdownLabel.text = "\(count)"
+                HapticManager.shared.trigger(.selection)
+                count -= 1
+            } else if count == 0 {
+                self.countdownLabel.text = "GO!"
+                self.countdownLabel.fontColor = .systemGreen
+                count -= 1
+            } else {
+                self.countdownLabel.removeFromParent()
+                self.beginGameplay()
+            }
+        }
+        
+        run(SKAction.repeat(SKAction.sequence([tick, wait]), count: 5))
+    }
+
+    private func beginGameplay() {
+        currentState = .playing
+        setupTimer()
+        startNeedleMovement()
+    }
+
     private func attemptResolve() {
         if isResolved { return }
-        
-        // Stop all game loops immediately
         isResolved = true
+        
         removeAction(forKey: "gameTimer")
         needle.removeAction(forKey: "needleAnim")
         
@@ -73,14 +122,10 @@ class PredatorGame: SKScene {
             }
         }
         
-        if caught {
-            handleLoss()
-        } else {
-            handleWin()
-        }
+        if caught { handleLoss() } else { handleWin() }
     }
 
-    // MARK: - Setup & Game Logic
+    // MARK: - Setup & Logic
     
     private func setupTimingBar() {
         bar.position = CGPoint(x: frame.midX, y: frame.midY - 50)
@@ -98,7 +143,6 @@ class PredatorGame: SKScene {
             
             let xPos = (-bar.size.width / 2) + (CGFloat(i) * zoneWidth) + (zoneWidth / 2)
             zone.position = CGPoint(x: xPos, y: 0)
-            zone.name = type
             zone.zPosition = 2
             bar.addChild(zone)
             
@@ -116,8 +160,7 @@ class PredatorGame: SKScene {
         needle.zPosition = 100
         addChild(needle)
         
-        let instructionLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
-        instructionLabel.text = "TAP OR SPACE TO AVOID PREDATORS!"
+        instructionLabel.text = "PRESS SPACE OR TAP TO START"
         instructionLabel.fontSize = 24
         instructionLabel.fontColor = .white
         instructionLabel.position = CGPoint(x: frame.midX, y: frame.midY + 180)
@@ -131,7 +174,6 @@ class PredatorGame: SKScene {
         timerLabel.fontColor = .systemYellow
         timerLabel.position = CGPoint(x: frame.midX, y: frame.maxY - 100)
         timerLabel.zPosition = 100
-        
         if timerLabel.parent == nil { addChild(timerLabel) }
         
         let wait = SKAction.wait(forDuration: 1.0)
@@ -148,10 +190,7 @@ class PredatorGame: SKScene {
                 ]))
                 HapticManager.shared.trigger(.selection)
             }
-            
-            if self.timeLeft <= 0 {
-                self.handleTimeout()
-            }
+            if self.timeLeft <= 0 { self.handleTimeout() }
         }
         run(SKAction.repeatForever(SKAction.sequence([wait, update])), withKey: "gameTimer")
     }
@@ -164,9 +203,11 @@ class PredatorGame: SKScene {
         needle.run(SKAction.repeatForever(sequence), withKey: "needleAnim")
     }
 
+    // MARK: - End States
+    
     private func handleWin() {
         HapticManager.shared.trigger(.success)
-        addPoints()
+        viewModel?.userScore += 1
         let winLabel = SKLabelNode(text: "ESCAPED!")
         winLabel.fontColor = .green
         winLabel.fontName = "AvenirNext-Bold"
@@ -187,15 +228,10 @@ class PredatorGame: SKScene {
         addChild(lossLabel)
         
         SoundManager.shared.playSoundEffect(named: "error_buzz")
-        let flash = SKSpriteNode(color: .red, size: self.size)
-        flash.position = CGPoint(x: frame.midX, y: frame.midY)
-        flash.alpha = 0.3
-        flash.zPosition = 150
-        addChild(flash)
-
+        
         run(SKAction.wait(forDuration: 1.5)) { [weak self] in
-            self?.triggerGameOver()
-            self?.triggerDeathMessage(in: "You died from a predator attack.")
+            self?.dismissAction?()
+            self?.viewModel?.currentDeathMessage = "You died from a predator attack."
         }
     }
 
@@ -204,15 +240,12 @@ class PredatorGame: SKScene {
         isResolved = true
         needle.removeAction(forKey: "needleAnim")
         removeAction(forKey: "gameTimer")
-        timerLabel.text = "OUT OF TIME!"
-        timerLabel.fontColor = .red
         handleLoss()
     }
 
     func returnToMainWorld() {
         guard let view = self.view else { return }
         viewModel?.minigameStarted = false
-        viewModel?.joystickVelocity = .zero
         viewModel?.controlsAreVisable = true
         viewModel?.mapIsVisable = true
         let transition = SKTransition.crossFade(withDuration: 0.5)
@@ -220,17 +253,4 @@ class PredatorGame: SKScene {
             view.presentScene(existing, transition: transition)
         }
     }
-
-    func addPoints() {
-        viewModel?.userScore += 1
-    }
-    
-    func triggerGameOver() {
-        dismissAction?()
-    }
-    
-    func triggerDeathMessage(in message: String) {
-        viewModel?.currentDeathMessage = message
-    }
 }
-

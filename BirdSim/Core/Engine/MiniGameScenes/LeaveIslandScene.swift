@@ -6,16 +6,21 @@
 //
 
 import SpriteKit
-import GameController // 1. Added for Keyboard support
+import GameController
 
 class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     var viewModel: MainGameView.ViewModel?
     var bird = SKSpriteNode(imageNamed: "User_BirdFlappy")
     private var isGameOver = false
+    private var gameStarted = false
     
     // --- Responsive Constants ---
     private var unit: CGFloat { return size.height }
-    private var playableWidth: CGFloat { return size.width }
+    
+    // --- Visible Timer ---
+    private var timerLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
+    private var timeRemaining: TimeInterval = 15
+    private var lastUpdateTime: TimeInterval = 0
     
     // Collision Categories
     private let birdCategory: UInt32 = 0x1 << 0
@@ -31,8 +36,29 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         self.physicsWorld.contactDelegate = self
         
         setupBird()
-        setupObstacles()
-        startCountdown()
+        setupTimerLabel()
+        
+        // Scene starts frozen by the transition helper.
+        // startGame() will be called by the startAction closure.
+    }
+    
+    func setupTimerLabel() {
+        timerLabel.fontSize = unit * 0.05
+        timerLabel.fontColor = .white
+        timerLabel.position = CGPoint(x: size.width / 2, y: size.height * 0.88)
+        timerLabel.zPosition = 100
+        timerLabel.text = "ESCAPE IN: 15"
+        
+        let shadow = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        shadow.text = timerLabel.text
+        shadow.fontSize = timerLabel.fontSize
+        shadow.fontColor = .black
+        shadow.alpha = 0.4
+        shadow.position = CGPoint(x: 2, y: -2)
+        shadow.zPosition = -1
+        timerLabel.addChild(shadow)
+        
+        addChild(timerLabel)
     }
     
     func setupBird() {
@@ -41,7 +67,7 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         bird.size = CGSize(width: birdSize, height: birdSize)
         
         bird.physicsBody = SKPhysicsBody(circleOfRadius: birdSize * 0.4)
-        bird.physicsBody?.isDynamic = true
+        bird.physicsBody?.isDynamic = false // Frozen until startGame
         bird.physicsBody?.categoryBitMask = birdCategory
         bird.physicsBody?.contactTestBitMask = pipeCategory
         bird.physicsBody?.collisionBitMask = pipeCategory
@@ -49,51 +75,72 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         bird.name = "playerBird"
         addChild(bird)
     }
-    
-    // MARK: - Input Handling
 
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    func startGame() {
+        guard !gameStarted else { return }
+        
+        // 1. Unfreeze scene mechanics
+        self.isPaused = false
+        self.isUserInteractionEnabled = true
+        self.speed = 1.0
+        self.physicsWorld.speed = 1.0
+        
+        gameStarted = true
+        
+        // 2. Start Bird Physics
+        bird.physicsBody?.isDynamic = true
+        
+        // 3. Start Spawning Obstacles
+        setupObstacles()
+        
+        // 4. Initial Jump
         jump()
     }
-
-    // 2. Shared Jump Logic
+    
     private func jump() {
-        guard !isGameOver else { return }
-        
+        guard !isGameOver && gameStarted else { return }
         HapticManager.shared.trigger(.selection)
-        
-        // Velocity reset for snappy controls
         bird.physicsBody?.velocity = CGVector(dx: 0, dy: 0)
-        // Impulse scaled to height
         bird.physicsBody?.applyImpulse(CGVector(dx: 0, dy: unit * 0.045))
     }
 
     override func update(_ currentTime: TimeInterval) {
-        // 3. Keyboard Listener for Space Bar
         if let keyboard = GCKeyboard.coalesced?.keyboardInput {
-            // We use .wasPressed or a state check to prevent "fluttering"
-            // if the user holds the key down.
-            let spaceKey = keyboard.button(forKeyCode: .spacebar)
-            if spaceKey?.isPressed == true {
+            if keyboard.button(forKeyCode: .spacebar)?.isPressed == true {
                 jump()
             }
         }
 
-        guard !isGameOver else { return }
+        guard gameStarted && !isGameOver else {
+            lastUpdateTime = currentTime
+            return
+        }
         
-        // Screen bounds check
+        if lastUpdateTime == 0 { lastUpdateTime = currentTime }
+        let dt = currentTime - lastUpdateTime
+        lastUpdateTime = currentTime
+        
+        if timeRemaining > 0 {
+            timeRemaining -= dt
+            let displayTime = Int(ceil(timeRemaining))
+            let newText = "ESCAPE IN: \(displayTime)"
+            timerLabel.text = newText
+            (timerLabel.children.first as? SKLabelNode)?.text = newText
+            
+            if timeRemaining <= 5 { timerLabel.fontColor = .systemRed }
+        } else {
+            userHasWon()
+        }
+        
         if bird.position.y < 0 || bird.position.y > size.height {
             gameOver()
         }
         
-        // Tilt Logic
         let velocity = bird.physicsBody?.velocity.dy ?? 0
         let targetRotation = velocity * (velocity < 0 ? 0.002 : 0.001)
         bird.zRotation = min(max(-1, targetRotation), 0.5)
     }
     
-    // MARK: - Game State
-
     func didBegin(_ contact: SKPhysicsContact) {
         gameOver()
     }
@@ -101,7 +148,6 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
     func gameOver() {
         guard !isGameOver else { return }
         isGameOver = true
-        
         HapticManager.shared.trigger(.error)
         viewModel?.currentDeathMessage = "You failed to escape."
         viewModel?.showGameOver = true
@@ -110,12 +156,15 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
 
     func userHasWon() {
         guard !isGameOver else { return }
+        isGameOver = true
+        timerLabel.text = "ESCAPED!"
+        timerLabel.fontColor = .systemGreen
+        (timerLabel.children.first as? SKLabelNode)?.text = "ESCAPED!"
+        
         HapticManager.shared.trigger(.success)
-        addPoints()
+        viewModel?.userScore += 5
         viewModel?.showGameWin = true
     }
-    
-    // MARK: - Layout & Obstacles
     
     func setupObstacles() {
         let spawn = SKAction.run { [weak self] in self?.createObstaclePair() }
@@ -127,26 +176,21 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         let gapHeight = unit * 0.3
         let pipeWidth = unit * 0.12
         let pipeHeight = unit
-        
         let randomCenterY = CGFloat.random(in: (unit * 0.2)...(unit * 0.8))
             
-        let bottomPipe = SKSpriteNode(color: .green, size: CGSize(width: pipeWidth, height: pipeHeight))
-        bottomPipe.position = CGPoint(x: size.width + pipeWidth,
-                                      y: randomCenterY - (gapHeight / 2) - (pipeHeight / 2))
+        let bottomPipe = SKSpriteNode(color: .systemGreen, size: CGSize(width: pipeWidth, height: pipeHeight))
+        bottomPipe.position = CGPoint(x: size.width + pipeWidth, y: randomCenterY - (gapHeight / 2) - (pipeHeight / 2))
         setupObstaclePhysics(bottomPipe)
             
-        let topPipe = SKSpriteNode(color: .green, size: CGSize(width: pipeWidth, height: pipeHeight))
-        topPipe.position = CGPoint(x: size.width + pipeWidth,
-                                   y: randomCenterY + (gapHeight / 2) + (pipeHeight / 2))
+        let topPipe = SKSpriteNode(color: .systemGreen, size: CGSize(width: pipeWidth, height: pipeHeight))
+        topPipe.position = CGPoint(x: size.width + pipeWidth, y: randomCenterY + (gapHeight / 2) + (pipeHeight / 2))
         setupObstaclePhysics(topPipe)
             
-        let distanceToMove = size.width + (pipeWidth * 3)
-        let moveLeft = SKAction.moveBy(x: -distanceToMove, y: 0, duration: 3.0)
+        let moveLeft = SKAction.moveBy(x: -(size.width + (pipeWidth * 3)), y: 0, duration: 3.0)
         let sequence = SKAction.sequence([moveLeft, .removeFromParent()])
             
         bottomPipe.run(sequence)
         topPipe.run(sequence)
-            
         addChild(bottomPipe)
         addChild(topPipe)
     }
@@ -156,15 +200,5 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         obstacle.physicsBody?.isDynamic = false
         obstacle.physicsBody?.categoryBitMask = pipeCategory
         obstacle.physicsBody?.contactTestBitMask = birdCategory
-    }
-    
-    func startCountdown() {
-        let wait = SKAction.wait(forDuration: 15.0)
-        let action = SKAction.run { [weak self] in self?.userHasWon() }
-        self.run(SKAction.sequence([wait, action]))
-    }
-    
-    func addPoints() {
-        viewModel?.userScore += 5
     }
 }
