@@ -31,10 +31,15 @@ struct ToolbarButtonView: View {
                     }
                     
                 } label: {
-                    Image(systemName: "map.fill")
-                        .font(.largeTitle)
+                    Image(.compass)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 80, height: 80)
+                        .background(
+                            Circle()
+                                .fill(.black.opacity(0.7))
+                        )
                         .padding()
-                        .background(Circle().fill(.ultraThinMaterial))
                 }
                 .padding()
             }
@@ -43,10 +48,11 @@ struct ToolbarButtonView: View {
             Button {
                 onExit()
             } label: {
-                Image(systemName: "pause.fill")
-                    .font(.largeTitle)
+                Image(.pause)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 80, height: 80)
                     .padding()
-                    .background(Circle().fill(.ultraThinMaterial))
             }
             .padding()
         }
