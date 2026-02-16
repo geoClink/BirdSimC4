@@ -8,9 +8,7 @@
 import SpriteKit
 
 extension GameScene {
-    func spawnMaleBird() {
-        if childNode(withName: "MaleBird") != nil { return }
-        
+    func spawnMaleBird() {        
         let maleBird = SKSpriteNode(imageNamed: "Predator/MaleBird")
         maleBird.name = "MaleBird"
         maleBird.size = CGSize(width: 200, height: 200)
