@@ -21,8 +21,11 @@ struct PickupButtonView: View {
                     .fill(Color(.systemGray6)) // background color
                     .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                 
-                Image(systemName: "hand.raised")
-                    .foregroundStyle(.black)            }
+                Image(.pointer)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 80, height: 80)
+            }
         }
         .disabled(viewModel.isFlying) // disable while flying
         .opacity(viewModel.isFlying ? 0.6 : 1.0)
