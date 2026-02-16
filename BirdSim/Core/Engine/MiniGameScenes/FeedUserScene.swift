@@ -215,8 +215,8 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     }
     func spawnFallingShape() {
         let isGood = Int.random(in: 0...2) != 2
-        let node = isGood ? SKShapeNode(circleOfRadius: 20) : SKShapeNode(rectOf: CGSize(width: 40, height: 40), cornerRadius: 4)
-        node.fillColor = isGood ? .green : .red
+        let node = isGood ? SKSpriteNode(imageNamed: randomGoodItem()) : SKSpriteNode(imageNamed: "spider")
+        node.size = CGSize(width: 100, height: 100)
         node.position = CGPoint(x: CGFloat.random(in: 50...(frame.width - 50)), y: frame.height + 50)
         node.physicsBody = SKPhysicsBody(circleOfRadius: 20)
         node.physicsBody?.categoryBitMask = isGood ? goodItemCategory : badItemCategory
@@ -230,5 +230,11 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         viewModel?.mapIsVisable = true
         guard let view = self.view, let existing = viewModel?.mainScene else { return }
         view.presentScene(existing, transition: SKTransition.crossFade(withDuration: 0.5))
+    }
+    
+    func randomGoodItem() -> String {
+        let images = ["berry", "ladybug", "caterpillerMini"]
+        
+        return images.randomElement() ?? "berry"
     }
 }
