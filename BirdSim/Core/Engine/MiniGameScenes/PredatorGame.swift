@@ -10,6 +10,8 @@ import GameController
 
 class PredatorGame: SKScene {
     var viewModel: MainGameView.ViewModel?
+    private var backgroundNode: SKSpriteNode?
+
     var dismissAction: (() -> Void)?
     
     // State Tracking
@@ -32,6 +34,7 @@ class PredatorGame: SKScene {
         SoundManager.shared.startBackgroundMusic(track: .predator)
         backgroundColor = .black
         
+        setupBackground()
         setupTimingBar()
         // Notice: we do NOT call setupTimer or startNeedleMovement here anymore
     }
@@ -194,6 +197,22 @@ class PredatorGame: SKScene {
         }
         run(SKAction.repeatForever(SKAction.sequence([wait, update])), withKey: "gameTimer")
     }
+    
+    func setupBackground() {
+        if let bg = backgroundNode {
+            bg.size = self.size
+            bg.position = CGPoint(x: frame.midX, y: frame.midY)
+            return
+        }
+        let backgroundtexture = SKTexture(image: .Predator.sky)
+        let background = SKSpriteNode(texture: backgroundtexture)
+        background.zPosition = -100
+        background.size = self.size
+        background.position = CGPoint(x: frame.midX, y: frame.midY)
+        addChild(background)
+        backgroundNode = background
+    }
+
 
     private func startNeedleMovement() {
         let moveRight = SKAction.moveTo(x: bar.frame.maxX, duration: 0.9)

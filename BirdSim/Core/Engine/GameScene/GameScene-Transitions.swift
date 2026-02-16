@@ -151,7 +151,7 @@ extension GameScene {
         viewModel?.mapIsVisable = true
         if let existing = viewModel?.mainScene {
             view.presentScene(existing, transition: SKTransition.crossFade(withDuration: 0.5))
+            existing.checkBabyWinCondition()
         }
     }
 }
-

@@ -77,8 +77,10 @@ extension MainGameView {
         // Inside MainGameView.ViewModel
         // Inside MainGameView.ViewModel
         @Published var activeNestNode: SKNode?
+        var activeNestID: String?
         @Published var pendingNestWorldPosition: CGPoint?
         @Published var pendingNestAnchorTreeName: String?
+        @Published var pendingNestAnchorTreeID: String?
 
         // Inside your ViewModel
         
@@ -317,10 +319,19 @@ extension MainGameView {
         
         func incrementFeedingForCurrentNest() {
             // 1. Identify WHICH nest we are interacting with
-            guard let nest = activeNestNode else { return }
+            let nest: SKNode?
+            if let activeNestNode {
+                nest = activeNestNode
+            } else if let activeNestID, let mainScene {
+                nest = mainScene.nest(withID: activeNestID)
+            } else {
+                nest = nil
+            }
+            
+            guard let nest else { return }
             
             // 2. Update ONLY that nest's local data
-            if let data = nest.userData as? NSMutableDictionary {
+            if let data = nest.userData {
                 // This resets the "timer" for just this one bird
                 data["spawnDate"] = Date()
                 
@@ -329,6 +340,18 @@ extension MainGameView {
                 data["fedCount"] = currentFed + 1
                 
                 print("DEBUG: Refilled hunger for specific nest. Total feeds: \(currentFed + 1)")
+            }
+        }
+        
+        func incrementFeeding(forNestID nestID: String) {
+            guard let mainScene, let nest = mainScene.nest(withID: nestID) else { return }
+            
+            if let data = nest.userData {
+                data["spawnDate"] = Date()
+                let currentFed = (data["fedCount"] as? Int) ?? 0
+                data["fedCount"] = currentFed + 1
+                
+                print("DEBUG: Refilled hunger for nestID \(nestID). Total feeds: \(currentFed + 1)")
             }
         }
 
@@ -766,4 +789,3 @@ extension MainGameView: GameDelegate {
 
 
 extension ImageResource: Equatable { }
-

@@ -32,9 +32,42 @@ extension GameScene {
         return found
     }
     
+    func nest(withID nestID: String) -> SKNode? {
+        var found: SKNode?
+        
+        enumerateChildNodes(withName: "//final_nest") { node, stop in
+            if let data = node.userData, let id = data["nestID"] as? String, id == nestID {
+                found = node
+                stop.pointee = true
+            }
+        }
+        
+        if found != nil { return found }
+        
+        enumerateChildNodes(withName: "//nest_active") { node, stop in
+            if let data = node.userData, let id = data["nestID"] as? String, id == nestID {
+                found = node
+                stop.pointee = true
+            }
+        }
+        
+        return found
+    }
+    
+    func tree(withID treeID: String) -> SKNode? {
+        for node in children {
+            if let data = node.userData,
+               let id = data["treeID"] as? String,
+               id == treeID {
+                return node
+            }
+        }
+        return nil
+    }
+    
     func feedSpecificBaby(nest: SKNode) {
         // Only reset the timer for the nest we are interacting with
-        if let data = nest.userData as? NSMutableDictionary {
+        if let data = nest.userData {
             data["spawnDate"] = Date() // Resetting the 'birthday' refills the bar
             
             // Increment the specific fed count for this nest
@@ -68,12 +101,25 @@ extension GameScene {
         }
         nest.position = spawnPoint
         
-        if let anchorName = viewModel?.pendingNestAnchorTreeName,
-           let tree = childNode(withName: anchorName) {
+        if let anchorTreeID = viewModel?.pendingNestAnchorTreeID,
+           let tree = tree(withID: anchorTreeID) {
             // Convert world position to the tree's local space
             let localPos = tree.convert(spawnPoint, from: self)
             nest.position = localPos
             tree.addChild(nest)
+            if let data = nest.userData {
+                data["treeID"] = anchorTreeID
+            }
+        } else if let anchorName = viewModel?.pendingNestAnchorTreeName,
+                  let tree = childNode(withName: anchorName) {
+            // Convert world position to the tree's local space
+            let localPos = tree.convert(spawnPoint, from: self)
+            nest.position = localPos
+            tree.addChild(nest)
+            if let treeID = tree.userData?["treeID"] as? String,
+               let data = nest.userData {
+                data["treeID"] = treeID
+            }
         } else {
             addChild(nest)
         }
@@ -84,6 +130,7 @@ extension GameScene {
         viewModel?.nestPosition = spawnPoint
         viewModel?.pendingNestWorldPosition = nil
         viewModel?.pendingNestAnchorTreeName = nil
+        viewModel?.pendingNestAnchorTreeID = nil
         
         nest.alpha = 0
         nest.setScale(0.1)
@@ -104,11 +151,8 @@ extension GameScene {
     }
     
     func checkBabyWinCondition() {
-        // We now check the fedCount inside the specific nest being interacted with
-        guard let nest = viewModel?.activeNestNode,
-              let data = nest.userData,
-              let fedCount = data["fedCount"] as? Int,
-              fedCount >= 2 else { return }
+        // Identify any nest that has reached the feed threshold, even if activeNestNode isn't set yet.
+        guard let nest = nestReadyToGraduate() else { return }
         
         if nest.childNode(withName: "babyBird") != nil {
             // Logic for a baby growing up
@@ -129,6 +173,38 @@ extension GameScene {
                 self?.viewModel?.clearNestAndBabyState()
             }
         }
+    }
+    
+    private func nestReadyToGraduate() -> SKNode? {
+        if let activeNest = viewModel?.activeNestNode,
+           let data = activeNest.userData,
+           let fedCount = data["fedCount"] as? Int,
+           fedCount >= 2 {
+            return activeNest
+        }
+        
+        var found: SKNode?
+        enumerateChildNodes(withName: "//final_nest") { node, stop in
+            if let data = node.userData,
+               let fedCount = data["fedCount"] as? Int,
+               fedCount >= 2 {
+                found = node
+                stop.pointee = true
+            }
+        }
+        
+        if found != nil { return found }
+        
+        enumerateChildNodes(withName: "//nest_active") { node, stop in
+            if let data = node.userData,
+               let fedCount = data["fedCount"] as? Int,
+               fedCount >= 2 {
+                found = node
+                stop.pointee = true
+            }
+        }
+        
+        return found
     }
     
     

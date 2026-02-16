@@ -19,10 +19,10 @@ struct FlyButtonView: View {
                         .fill(Color(.systemGray6)) // background color
                         .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                     
-                    Image(systemName: "chevron.up")
-
-                        .foregroundStyle(.black)
-                        .rotationEffect(.degrees(viewModel.isFlying ? 180 : 0))
+                    Image(viewModel.isFlying ? "foot" : "wing")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 80, height: 80)
                 }
             }
             .contentShape(Circle())

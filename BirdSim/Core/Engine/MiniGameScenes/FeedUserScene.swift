@@ -11,6 +11,9 @@ import GameController
 class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     var viewModel: MainGameView.ViewModel?
     
+    private var backgroundNode: SKSpriteNode?
+
+    
     // --- Input Modes ---
     enum InputMode {
         case keyboard // Renamed for clarity since it's the primary load-in mode
@@ -34,7 +37,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     
     private var fullness: CGFloat = 0.0 { didSet { updateMeter() } }
     private let maxFullness: CGFloat = 50
-    let player = SKShapeNode(rectOf: CGSize(width: 80, height: 40), cornerRadius: 10)
+    let player = SKSpriteNode(imageNamed: "minigameBird")
     
     // Physics Categories
     let playerCategory: UInt32 = 0x1 << 0
@@ -46,6 +49,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         physicsWorld.gravity = CGVector(dx: 0, dy: -3.0)
         physicsWorld.contactDelegate = self
         
+        setupBackground()
         setupPlayer()
         setupUI()
         setupAccelerometer() // Starts in background, but won't move player until toggled
@@ -94,10 +98,8 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
             
             if leftPressed {
                 moveAmount = -keySpeed
-                flashPlayer()
             } else if rightPressed {
                 moveAmount = keySpeed
-                flashPlayer()
             }
         }
         
@@ -114,13 +116,6 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         let newX = player.position.x + moveAmount
         player.position.x = max(halfWidth, min(frame.width - halfWidth, newX))
         player.zRotation = -moveAmount * 0.04
-    }
-
-    private func flashPlayer() {
-        if player.fillColor == .cyan {
-            player.fillColor = .white
-            player.run(SKAction.wait(forDuration: 0.05)) { self.player.fillColor = .cyan }
-        }
     }
 
     // MARK: - TOUCHES
@@ -153,9 +148,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
 
     // --- REMAINDER OF SUPPORT METHODS (Unchanged) ---
     private func setupPlayer() {
-        player.fillColor = .cyan
-        player.strokeColor = .white
-        player.lineWidth = 2
+        player.size = CGSize(width: 250, height: 250)
         player.position = CGPoint(x: frame.midX, y: 100)
         player.name = "player"
         player.physicsBody = SKPhysicsBody(rectangleOf: player.frame.size)
@@ -164,6 +157,23 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         player.physicsBody?.contactTestBitMask = goodItemCategory | badItemCategory
         addChild(player)
     }
+    
+    
+    func setupBackground() {
+        if let bg = backgroundNode {
+            bg.size = self.size
+            bg.position = CGPoint(x: frame.midX, y: frame.midY)
+            return
+        }
+        let backgroundtexture = SKTexture(image: .grass)
+        let background = SKSpriteNode(texture: backgroundtexture)
+        background.zPosition = -100
+        background.size = self.size
+        background.position = CGPoint(x: frame.midX, y: frame.midY)
+        addChild(background)
+        backgroundNode = background
+    }
+
 
     private func setupAccelerometer() {
         if motionManager.isAccelerometerAvailable {
@@ -215,8 +225,8 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     }
     func spawnFallingShape() {
         let isGood = Int.random(in: 0...2) != 2
-        let node = isGood ? SKShapeNode(circleOfRadius: 20) : SKShapeNode(rectOf: CGSize(width: 40, height: 40), cornerRadius: 4)
-        node.fillColor = isGood ? .green : .red
+        let node = isGood ? SKSpriteNode(imageNamed: randomGoodItem()) : SKSpriteNode(imageNamed: "spider")
+        node.size = CGSize(width: 100, height: 100)
         node.position = CGPoint(x: CGFloat.random(in: 50...(frame.width - 50)), y: frame.height + 50)
         node.physicsBody = SKPhysicsBody(circleOfRadius: 20)
         node.physicsBody?.categoryBitMask = isGood ? goodItemCategory : badItemCategory
@@ -230,5 +240,11 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         viewModel?.mapIsVisable = true
         guard let view = self.view, let existing = viewModel?.mainScene else { return }
         view.presentScene(existing, transition: SKTransition.crossFade(withDuration: 0.5))
+    }
+    
+    func randomGoodItem() -> String {
+        let images = ["berry", "ladybug", "caterpillerMini"]
+        
+        return images.randomElement() ?? "berry"
     }
 }

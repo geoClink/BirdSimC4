@@ -13,6 +13,9 @@ import UIKit
 class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     var viewModel: MainGameView.ViewModel?
     var isSceneTransitioning = false
+    private var backgroundNode: SKSpriteNode?
+    private var targetNestID: String?
+
     
     // --- Win/Loss Tracking ---
     var caughtCount = 0
@@ -40,6 +43,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         // This ensures the joystick and inventory disappear immediately
         viewModel?.controlsAreVisable = false
         viewModel?.mapIsVisable = false
+        targetNestID = viewModel?.activeNestID
         
         self.scaleMode = .aspectFit
         
@@ -50,6 +54,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         physicsWorld.contactDelegate = self
         physicsWorld.gravity = CGVector(dx: 0, dy: -unit * 0.015)
         
+        setupBackground()
         setupUI()
         setupGameElements()
         setupTimer()
@@ -132,7 +137,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         let linkHeight = (unit * 0.4) / CGFloat(linkCount)
         
         for i in 0..<linkCount {
-            let link = SKSpriteNode(color: .white, size: CGSize(width: linkWidth, height: linkHeight))
+            let link = SKSpriteNode(imageNamed: "vine")
             link.position = CGPoint(x: xPos, y: yPos - (CGFloat(i) * linkHeight) - (linkHeight / 2))
             link.name = "rope_link"
             link.zPosition = 4
@@ -149,8 +154,8 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
             lastNode = link
         }
         
-        let foodSize = unit * 0.07
-        let itemNode = SKSpriteNode(color: .orange, size: CGSize(width: foodSize, height: foodSize))
+        let foodSize = unit * 0.005
+        let itemNode = SKSpriteNode(imageNamed: randomItem())
         itemNode.position = CGPoint(x: lastNode.position.x, y: lastNode.position.y - (foodSize / 2))
         itemNode.name = "food_item"
         itemNode.zPosition = 6
@@ -169,8 +174,6 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
     
     func setupBucket() {
         let bucketWidth = unit * 0.22
-        let bucketHeight = unit * 0.12
-        let thickness = unit * 0.012
         
         let container = SKNode()
         container.name = "bucket"
@@ -180,25 +183,17 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         
         container.position = CGPoint(x: leftLimit, y: unit * 0.18)
         
-        let bottom = SKSpriteNode(color: .blue, size: CGSize(width: bucketWidth, height: thickness))
-        let leftSide = SKSpriteNode(color: .blue, size: CGSize(width: thickness, height: bucketHeight))
-        leftSide.position = CGPoint(x: -bucketWidth/2, y: bucketHeight/2)
-        let rightSide = SKSpriteNode(color: .blue, size: CGSize(width: thickness, height: bucketHeight))
-        rightSide.position = CGPoint(x: bucketWidth/2, y: bucketHeight/2)
+        let bottom = SKSpriteNode(imageNamed: "minigameBird")
         
         bottom.zPosition = 10
-        leftSide.zPosition = 10
-        rightSide.zPosition = 10
+        
+        bottom.size = CGSize(width: 150, height: 150)
         
         container.addChild(bottom)
-        container.addChild(leftSide)
-        container.addChild(rightSide)
         
         let bottomBody = SKPhysicsBody(rectangleOf: bottom.size)
-        let leftBody = SKPhysicsBody(rectangleOf: leftSide.size, center: leftSide.position)
-        let rightBody = SKPhysicsBody(rectangleOf: rightSide.size, center: rightSide.position)
         
-        container.physicsBody = SKPhysicsBody(bodies: [bottomBody, leftBody, rightBody])
+        container.physicsBody = SKPhysicsBody(bodies: [bottomBody])
         container.physicsBody?.isDynamic = false
         container.physicsBody?.categoryBitMask = bucketCategory
         addChild(container)
@@ -210,6 +205,21 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         moveLeft.timingMode = .easeInEaseOut
         
         container.run(SKAction.repeatForever(SKAction.sequence([moveRight, moveLeft])))
+    }
+    
+    func setupBackground() {
+        if let bg = backgroundNode {
+            bg.size = self.size
+            bg.position = CGPoint(x: frame.midX, y: frame.midY)
+            return
+        }
+        let backgroundtexture = SKTexture(image: .backgroundNoVine)
+        let background = SKSpriteNode(texture: backgroundtexture)
+        background.zPosition = -100
+        background.size = self.size
+        background.position = CGPoint(x: frame.midX, y: frame.midY)
+        addChild(background)
+        backgroundNode = background
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -284,7 +294,13 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         
         HapticManager.shared.trigger(success ? .heavy : .error)
         
-        if success { viewModel?.incrementFeedingForCurrentNest() }
+        if success {
+            if let targetNestID {
+                viewModel?.incrementFeeding(forNestID: targetNestID)
+            } else {
+                viewModel?.incrementFeedingForCurrentNest()
+            }
+        }
         
         var message = success ? "WELL FED!" : "TOO SLOW!"
         if !success && timeLeft <= 0 {
@@ -304,6 +320,13 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
             SKAction.run { [weak self] in self?.returnToMainGame() }
         ]))
     }
+    
+    func randomItem() -> String {
+        let images = ["berry", "ladybug", "caterpillerMini"]
+        
+        return images.randomElement() ?? "berry"
+    }
+
 
     func returnToMainGame() {
         guard let view = self.view else { return }
@@ -316,6 +339,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
             
             let transition = SKTransition.crossFade(withDuration: 0.5)
             view.presentScene(existing, transition: transition)
+            existing.checkBabyWinCondition()
         }
     }
 }
