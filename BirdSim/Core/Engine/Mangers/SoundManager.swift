@@ -23,7 +23,7 @@ enum SoundEffect: String {
     // --- Custom Sounds (Your files in Assets) ---
     case pickUp = "grab_effect"
     case building = "hammer_tap"
-    case feedSuccess = "swallow"
+    case feedSuccess = "feedSuccess"
     
     // --- Apple System Sounds (Built-in) ---
     case tap = "1104"           // Standard UI Tap
@@ -33,6 +33,8 @@ enum SoundEffect: String {
     case complete = "1301"      // "Task Finished" chime
     case error = "1053"         // Low-pitched negative alert
     case swoosh = "1322"        // Air sound (good for scene transitions)
+    
+    
 }
 
 class SoundManager {
