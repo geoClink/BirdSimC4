@@ -331,6 +331,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
             
             let transition = SKTransition.crossFade(withDuration: 0.5)
             view.presentScene(existing, transition: transition)
+            existing.checkBabyWinCondition()
         }
     }
 }

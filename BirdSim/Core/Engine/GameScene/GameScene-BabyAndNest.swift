@@ -104,11 +104,8 @@ extension GameScene {
     }
     
     func checkBabyWinCondition() {
-        // We now check the fedCount inside the specific nest being interacted with
-        guard let nest = viewModel?.activeNestNode,
-              let data = nest.userData,
-              let fedCount = data["fedCount"] as? Int,
-              fedCount >= 2 else { return }
+        // Identify any nest that has reached the feed threshold, even if activeNestNode isn't set yet.
+        guard let nest = nestReadyToGraduate() else { return }
         
         if nest.childNode(withName: "babyBird") != nil {
             // Logic for a baby growing up
@@ -129,6 +126,38 @@ extension GameScene {
                 self?.viewModel?.clearNestAndBabyState()
             }
         }
+    }
+    
+    private func nestReadyToGraduate() -> SKNode? {
+        if let activeNest = viewModel?.activeNestNode,
+           let data = activeNest.userData,
+           let fedCount = data["fedCount"] as? Int,
+           fedCount >= 2 {
+            return activeNest
+        }
+        
+        var found: SKNode?
+        enumerateChildNodes(withName: "//final_nest") { node, stop in
+            if let data = node.userData,
+               let fedCount = data["fedCount"] as? Int,
+               fedCount >= 2 {
+                found = node
+                stop.pointee = true
+            }
+        }
+        
+        if found != nil { return found }
+        
+        enumerateChildNodes(withName: "//nest_active") { node, stop in
+            if let data = node.userData,
+               let fedCount = data["fedCount"] as? Int,
+               fedCount >= 2 {
+                found = node
+                stop.pointee = true
+            }
+        }
+        
+        return found
     }
     
     

@@ -255,7 +255,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // 4. Gradual Health Drain (Frame-rate independent)
         // Drain one segment approximately every 20 seconds (5 segments over ~100s)
         healthAccumulator += deltaTime
-        let segmentDrainInterval: CGFloat = 20.0
+        let segmentDrainInterval: CGFloat = 35.0
         if healthAccumulator >= segmentDrainInterval {
             healthAccumulator = 0
             if let current = viewModel?.hunger, current > 0 {
@@ -264,11 +264,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
 
         // --- 5. MULTI-NEST & BABY SYSTEM ---
-        // We loop through all children to manage every nest independently
-        // Inside override func update(_ currentTime: TimeInterval)
-        for node in children {
-            // Only look for nests that are active
-            guard node.name == "final_nest" || node.name == "nest_active" else { continue }
+        // We loop through all nests (including nested nodes) to manage every nest independently
+        var nests: [SKNode] = []
+        enumerateChildNodes(withName: "//final_nest") { node, _ in
+            nests.append(node)
+        }
+        enumerateChildNodes(withName: "//nest_active") { node, _ in
+            nests.append(node)
+        }
+        
+        for node in nests {
             
             if self.currentActiveNest == nil { self.currentActiveNest = node }
             
@@ -692,7 +697,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
 
 } // End of GameScene Class
-
 
 
 
