@@ -34,7 +34,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     
     private var fullness: CGFloat = 0.0 { didSet { updateMeter() } }
     private let maxFullness: CGFloat = 50
-    let player = SKShapeNode(rectOf: CGSize(width: 80, height: 40), cornerRadius: 10)
+    let player = SKSpriteNode(imageNamed: "minigameBird")
     
     // Physics Categories
     let playerCategory: UInt32 = 0x1 << 0
@@ -94,10 +94,8 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
             
             if leftPressed {
                 moveAmount = -keySpeed
-                flashPlayer()
             } else if rightPressed {
                 moveAmount = keySpeed
-                flashPlayer()
             }
         }
         
@@ -114,13 +112,6 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         let newX = player.position.x + moveAmount
         player.position.x = max(halfWidth, min(frame.width - halfWidth, newX))
         player.zRotation = -moveAmount * 0.04
-    }
-
-    private func flashPlayer() {
-        if player.fillColor == .cyan {
-            player.fillColor = .white
-            player.run(SKAction.wait(forDuration: 0.05)) { self.player.fillColor = .cyan }
-        }
     }
 
     // MARK: - TOUCHES
@@ -153,9 +144,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
 
     // --- REMAINDER OF SUPPORT METHODS (Unchanged) ---
     private func setupPlayer() {
-        player.fillColor = .cyan
-        player.strokeColor = .white
-        player.lineWidth = 2
+        player.size = CGSize(width: 250, height: 250)
         player.position = CGPoint(x: frame.midX, y: 100)
         player.name = "player"
         player.physicsBody = SKPhysicsBody(rectangleOf: player.frame.size)
