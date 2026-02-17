@@ -63,13 +63,13 @@ struct HowToPlayView: View {
                             SectionHeader(title: "Action Reference", icon: "wind")
                             
                             VStack(alignment: .leading, spacing: 20) {
-                                ControlRow(icon: "arrow.up.and.down.and.arrow.left.right", key: "WASD", title: "Navigation", desc: "Navigate through the island. Walking allows for precise resource gathering, while flying covers distance.")
+                                ControlRow(icon: "joystick", key: "WASD", title: "Navigation", desc: "Navigate through the island. Walking allows for pre that would be crazy good are you on the green?cise resource gathering, while flying covers distance.")
                                 
-                                ControlRow(icon: "airplane", key: "SHFT", title: "Flight Toggle", desc: "Switch between walking and flying. Note: Hunger drains at a constant rate regardless of your speed.")
+                                ControlRow(icon: "wing", key: "SHFT", title: "Flight Toggle", desc: "Switch between walking and flying. Note: Hunger drains at a constant rate regardless of your speed.")
                                 
-                                ControlRow(icon: "hand.tap.fill", key: "SPC", title: "Interaction", desc: "Pick up building materials, grab caterpillars, or feed the young in your nest.")
+                                ControlRow(icon: "pointer", key: "SPC", title: "Interaction", desc: "Pick up building materials, grab caterpillars, or feed the young in your nest.")
                                 
-                                ControlRow(icon: "map.fill", key: "M", title: "Map View", desc: "Toggle the topographic map to locate nesting trees and identify the bridge.")
+                                ControlRow(icon: "compass", key: "M", title: "Map View", desc: "Toggle the topographic map to locate nesting trees and identify the bridge.")
                             }
                             .padding()
                             .background(RoundedRectangle(cornerRadius: 20).fill(Color(.secondarySystemGroupedBackground)))
@@ -178,7 +178,7 @@ struct HowToPlayView: View {
                                 
                                 HUDRow(iconImage: .predatorBarBird, wordImage: .predatorBarWord, barColor: .red, title: "Threat Level", text: "Fills when predators are near. Win the escape game.")
                                 
-                                HUDRow(iconImage: .babyBirdNest, wordImage: .babyBirdWord, barColor: .blue, title: "Nesting Timer", text: "Feed the baby twice in 2 minutes or lose points.")
+                                HUDRow(iconImage: .babyBirdNest, wordImage: .babyBirdWord, barColor: .blue, title: "Nesting Timer", text: "Gain one bar for each baby currently nested. Feed the baby twice in 2 minutes or lose points.")
                                 
                                 Divider()
                                 
@@ -351,7 +351,7 @@ struct HUDRow: View {
                 Image(wordImage).resizable().scaledToFit().frame(height: 12)
             }
             HStack(spacing: 4) {
-                ForEach(0..<8, id: \.self) { index in
+                ForEach(0..<5, id: \.self) { index in
                     RoundedRectangle(cornerRadius: 2).fill(barColor).frame(height: 10).opacity(index < 3 ? 1.0 : 0.2)
                 }
             }
@@ -375,9 +375,9 @@ struct ControlButtonPlaceholder: View {
                         Circle().stroke(Color.white.opacity(0.4), lineWidth: 1)
                     )
                 
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(.white)
+                Image(icon)
+                    .resizable()
+                    .scaledToFill()
                     .frame(width: 50, height: 50)
                 
                 Text(key)

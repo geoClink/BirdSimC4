@@ -45,6 +45,44 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         // startGame() will be called by the startAction closure.
     }
     
+    override func update(_ currentTime: TimeInterval) {
+        if let keyboard = GCKeyboard.coalesced?.keyboardInput {
+            if keyboard.button(forKeyCode: .spacebar)?.isPressed == true {
+                jump()
+            }
+        }
+
+        guard gameStarted && !isGameOver else {
+            lastUpdateTime = currentTime
+            return
+        }
+        
+        if lastUpdateTime == 0 { lastUpdateTime = currentTime }
+        let dt = currentTime - lastUpdateTime
+        lastUpdateTime = currentTime
+        
+        if timeRemaining > 0 {
+            timeRemaining -= dt
+            let displayTime = Int(ceil(timeRemaining))
+            let newText = "ESCAPE IN: \(displayTime)"
+            timerLabel.text = newText
+            (timerLabel.children.first as? SKLabelNode)?.text = newText
+            
+            if timeRemaining <= 5 { timerLabel.fontColor = .systemRed }
+        } else {
+            userHasWon()
+        }
+        
+        if bird.position.y < 0 || bird.position.y > size.height {
+            gameOver()
+        }
+        
+        let velocity = bird.physicsBody?.velocity.dy ?? 0
+        let targetRotation = velocity * (velocity < 0 ? 0.002 : 0.001)
+        bird.zRotation = min(max(-1, targetRotation), 0.5)
+    }
+
+    
     func setupTimerLabel() {
         timerLabel.fontSize = unit * 0.05
         timerLabel.fontColor = .white
@@ -107,43 +145,6 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         bird.physicsBody?.applyImpulse(CGVector(dx: 0, dy: unit * 0.045))
     }
 
-    override func update(_ currentTime: TimeInterval) {
-        if let keyboard = GCKeyboard.coalesced?.keyboardInput {
-            if keyboard.button(forKeyCode: .spacebar)?.isPressed == true {
-                jump()
-            }
-        }
-
-        guard gameStarted && !isGameOver else {
-            lastUpdateTime = currentTime
-            return
-        }
-        
-        if lastUpdateTime == 0 { lastUpdateTime = currentTime }
-        let dt = currentTime - lastUpdateTime
-        lastUpdateTime = currentTime
-        
-        if timeRemaining > 0 {
-            timeRemaining -= dt
-            let displayTime = Int(ceil(timeRemaining))
-            let newText = "ESCAPE IN: \(displayTime)"
-            timerLabel.text = newText
-            (timerLabel.children.first as? SKLabelNode)?.text = newText
-            
-            if timeRemaining <= 5 { timerLabel.fontColor = .systemRed }
-        } else {
-            userHasWon()
-        }
-        
-        if bird.position.y < 0 || bird.position.y > size.height {
-            gameOver()
-        }
-        
-        let velocity = bird.physicsBody?.velocity.dy ?? 0
-        let targetRotation = velocity * (velocity < 0 ? 0.002 : 0.001)
-        bird.zRotation = min(max(-1, targetRotation), 0.5)
-    }
-    
     func didBegin(_ contact: SKPhysicsContact) {
         gameOver()
     }

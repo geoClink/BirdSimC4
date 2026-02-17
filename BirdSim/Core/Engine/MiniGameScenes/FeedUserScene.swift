@@ -44,44 +44,6 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
     let goodItemCategory: UInt32 = 0x1 << 1
     let badItemCategory: UInt32 = 0x1 << 2
 
-    override func didMove(to view: SKView) {
-        backgroundColor = .darkGray
-        physicsWorld.gravity = CGVector(dx: 0, dy: -3.0)
-        physicsWorld.contactDelegate = self
-        
-        setupBackground()
-        setupPlayer()
-        setupUI()
-        setupAccelerometer() // Starts in background, but won't move player until toggled
-        
-        // Spawn falling items
-        let spawn = SKAction.run { [weak self] in self?.spawnFallingShape() }
-        run(SKAction.repeatForever(SKAction.sequence([spawn, .wait(forDuration: 0.8)])))
-    }
-
-    private func setupUI() {
-        modeButton.name = "ModeButton"
-        modeButton.fontSize = 20
-        modeButton.position = CGPoint(x: frame.width - 120, y: frame.height - 60)
-        modeButton.zPosition = 100
-        updateModeButtonText()
-        addChild(modeButton)
-        
-        setupMeter()
-        
-        let back = SKLabelNode(text: "← Back")
-        back.name = "Back Button"
-        back.position = CGPoint(x: 80, y: frame.height - 60)
-        back.fontSize = 20
-        addChild(back)
-    }
-
-    private func updateModeButtonText() {
-        // CHANGE 2: Update text to show Keyboard as the active starting state
-        modeButton.text = (currentMode == .keyboard) ? "⌨️ Mode: Keyboard" : "🕹 Mode: Tilt"
-        modeButton.fontColor = (currentMode == .keyboard) ? .cyan : .orange
-    }
-
     // MARK: - GAME LOOP
     override func update(_ currentTime: TimeInterval) {
         let halfWidth = player.frame.width / 2
@@ -144,6 +106,45 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         isDragging = false
+    }
+
+    
+    override func didMove(to view: SKView) {
+        backgroundColor = .darkGray
+        physicsWorld.gravity = CGVector(dx: 0, dy: -3.0)
+        physicsWorld.contactDelegate = self
+        
+        setupBackground()
+        setupPlayer()
+        setupUI()
+        setupAccelerometer() // Starts in background, but won't move player until toggled
+        
+        // Spawn falling items
+        let spawn = SKAction.run { [weak self] in self?.spawnFallingShape() }
+        run(SKAction.repeatForever(SKAction.sequence([spawn, .wait(forDuration: 0.8)])))
+    }
+
+    private func setupUI() {
+        modeButton.name = "ModeButton"
+        modeButton.fontSize = 20
+        modeButton.position = CGPoint(x: frame.width - 120, y: frame.height - 60)
+        modeButton.zPosition = 100
+        updateModeButtonText()
+        addChild(modeButton)
+        
+        setupMeter()
+        
+        let back = SKLabelNode(text: "← Back")
+        back.name = "Back Button"
+        back.position = CGPoint(x: 80, y: frame.height - 60)
+        back.fontSize = 20
+        addChild(back)
+    }
+
+    private func updateModeButtonText() {
+        // CHANGE 2: Update text to show Keyboard as the active starting state
+        modeButton.text = (currentMode == .keyboard) ? "⌨️ Mode: Keyboard" : "🕹 Mode: Tilt"
+        modeButton.fontColor = (currentMode == .keyboard) ? .cyan : .orange
     }
 
     // --- REMAINDER OF SUPPORT METHODS (Unchanged) ---

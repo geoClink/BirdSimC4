@@ -60,6 +60,48 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         setupTimer()
     }
     
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        let node = atPoint(location)
+        
+        if node.name == "Back Button" {
+            HapticManager.shared.trigger(.light)
+            returnToMainGame()
+        }
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        let cuttingRadius: CGFloat = unit * 0.06
+        
+        enumerateChildNodes(withName: "rope_link") { node, _ in
+            let dx = node.position.x - location.x
+            let dy = node.position.y - location.y
+            let distance = sqrt(dx*dx + dy*dy)
+            
+            if distance < cuttingRadius {
+                HapticManager.shared.trigger(.selection)
+                node.removeFromParent()
+            }
+        }
+    }
+    
+    override func update(_ currentTime: TimeInterval) {
+        enumerateChildNodes(withName: "food_item") { [weak self] node, _ in
+            guard let self = self else { return }
+            if node.position.y < -self.unit * 0.1 {
+                node.removeFromParent()
+                self.missedCount += 1
+                HapticManager.shared.trigger(.light)
+                self.checkWinCondition()
+            }
+        }
+    }
+    
+    
+    
     private func setupUI() {
         scoreLabel = SKLabelNode(fontNamed: "AvenirNext-Bold")
         scoreLabel.fontSize = unit * 0.05
@@ -222,34 +264,6 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
         backgroundNode = background
     }
     
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        let location = touch.location(in: self)
-        let node = atPoint(location)
-        
-        if node.name == "Back Button" {
-            HapticManager.shared.trigger(.light)
-            returnToMainGame()
-        }
-    }
-
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        let location = touch.location(in: self)
-        let cuttingRadius: CGFloat = unit * 0.06
-        
-        enumerateChildNodes(withName: "rope_link") { node, _ in
-            let dx = node.position.x - location.x
-            let dy = node.position.y - location.y
-            let distance = sqrt(dx*dx + dy*dy)
-            
-            if distance < cuttingRadius {
-                HapticManager.shared.trigger(.selection)
-                node.removeFromParent()
-            }
-        }
-    }
-    
     func didBegin(_ contact: SKPhysicsContact) {
         guard !isSceneTransitioning else { return }
         let contactMask = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
@@ -264,18 +278,6 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
                 caughtCount += 1
                 scoreLabel.text = "Caught: \(caughtCount)/\(requiredToWin)"
                 checkWinCondition()
-            }
-        }
-    }
-    
-    override func update(_ currentTime: TimeInterval) {
-        enumerateChildNodes(withName: "food_item") { [weak self] node, _ in
-            guard let self = self else { return }
-            if node.position.y < -self.unit * 0.1 {
-                node.removeFromParent()
-                self.missedCount += 1
-                HapticManager.shared.trigger(.light)
-                self.checkWinCondition()
             }
         }
     }

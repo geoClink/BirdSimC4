@@ -32,6 +32,80 @@ class BuildNestScene: SKScene {
         showMemorizationPhase()
     }
 
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first, let draggedNode = draggedNode else { return }
+        draggedNode.position = touch.location(in: self)
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        // Wake up the hardware immediately
+        HapticManager.shared.prepare()
+        
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        let node = atPoint(location)
+        
+        if itemTypes.contains(node.name ?? "") {
+            // Now trigger the feedback
+            HapticManager.shared.trigger(.selection)
+            
+            draggedNode = node as? SKSpriteNode
+            originalPosition = node.position
+            draggedNode?.zPosition = 100
+        }
+        
+        if node.name == "Back Button" {
+            HapticManager.shared.trigger(.light)
+            returnToMainGame()
+        }
+
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let draggedNode = draggedNode, let original = originalPosition else { return }
+        
+        let nodesAtLocation = nodes(at: draggedNode.position)
+        var wasPlaced = false
+        
+        // Look for a slot
+        if let slotNode = nodesAtLocation.first(where: { $0.name?.contains("slot") == true }),
+           let backSide = slotNode.childNode(withName: "back"),
+           backSide.xScale == 1.0, // Ensure it's flipped
+           let indexStr = slotNode.name?.split(separator: "_").last,
+           let index = Int(indexStr) {
+            
+            if viewModel?.slots[index] == nil {
+                // SUCCESS
+                HapticManager.shared.trigger(.success)
+                
+                let placedItem = SKSpriteNode(imageNamed: draggedNode.name!)
+                placedItem.size = CGSize(width: 75, height: 75)
+                placedItem.position = .zero
+                placedItem.zPosition = 15
+                slotNode.addChild(placedItem)
+                
+                viewModel?.slots[index] = draggedNode.name
+                viewModel?.checkWinCondition()
+                SoundManager.shared.playSoundEffect(named: "completetask_0")
+                
+                draggedNode.removeFromParent()
+                wasPlaced = true
+            }
+        }
+        
+        if !wasPlaced {
+            // Return to tray with a haptic "thud" or light tap
+            HapticManager.shared.trigger(.light)
+            draggedNode.run(SKAction.group([
+                SKAction.move(to: original, duration: 0.2),
+                SKAction.scale(to: 1.0, duration: 0.2)
+            ]))
+            draggedNode.zPosition = 20
+        }
+        
+        self.draggedNode = nil
+    }
+    
     func addPoints() {
         viewModel?.userScore += 1
     }
@@ -173,80 +247,6 @@ class BuildNestScene: SKScene {
     }
 
     
-
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first, let draggedNode = draggedNode else { return }
-        draggedNode.position = touch.location(in: self)
-    }
-
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        // Wake up the hardware immediately
-        HapticManager.shared.prepare()
-        
-        guard let touch = touches.first else { return }
-        let location = touch.location(in: self)
-        let node = atPoint(location)
-        
-        if itemTypes.contains(node.name ?? "") {
-            // Now trigger the feedback
-            HapticManager.shared.trigger(.selection)
-            
-            draggedNode = node as? SKSpriteNode
-            originalPosition = node.position
-            draggedNode?.zPosition = 100
-        }
-        
-        if node.name == "Back Button" {
-            HapticManager.shared.trigger(.light)
-            returnToMainGame()
-        }
-
-    }
-
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let draggedNode = draggedNode, let original = originalPosition else { return }
-        
-        let nodesAtLocation = nodes(at: draggedNode.position)
-        var wasPlaced = false
-        
-        // Look for a slot
-        if let slotNode = nodesAtLocation.first(where: { $0.name?.contains("slot") == true }),
-           let backSide = slotNode.childNode(withName: "back"),
-           backSide.xScale == 1.0, // Ensure it's flipped
-           let indexStr = slotNode.name?.split(separator: "_").last,
-           let index = Int(indexStr) {
-            
-            if viewModel?.slots[index] == nil {
-                // SUCCESS
-                HapticManager.shared.trigger(.success)
-                
-                let placedItem = SKSpriteNode(imageNamed: draggedNode.name!)
-                placedItem.size = CGSize(width: 75, height: 75)
-                placedItem.position = .zero
-                placedItem.zPosition = 15
-                slotNode.addChild(placedItem)
-                
-                viewModel?.slots[index] = draggedNode.name
-                viewModel?.checkWinCondition()
-                SoundManager.shared.playSoundEffect(named: "completetask_0")
-                
-                draggedNode.removeFromParent()
-                wasPlaced = true
-            }
-        }
-        
-        if !wasPlaced {
-            // Return to tray with a haptic "thud" or light tap
-            HapticManager.shared.trigger(.light)
-            draggedNode.run(SKAction.group([
-                SKAction.move(to: original, duration: 0.2),
-                SKAction.scale(to: 1.0, duration: 0.2)
-            ]))
-            draggedNode.zPosition = 20
-        }
-        
-        self.draggedNode = nil
-    }
 
     func handleFailure() {
         HapticManager.shared.trigger(.error)

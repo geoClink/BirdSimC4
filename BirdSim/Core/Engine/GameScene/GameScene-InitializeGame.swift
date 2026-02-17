@@ -216,6 +216,59 @@ extension GameScene {
         }
     }
     
+    // MARK: - Scene Lifecycle
+    // Called when the scene is first presented.
+    // Sets up camera, loads textures, and initializes world.
+    override func didMove(to view: SKView) {
+        
+        // Start background music if it isn't already playing
+        SoundManager.shared.startBackgroundMusic(track: .mainMap)
+        installKeyboardMapHandler()
+        
+        self.physicsWorld.contactDelegate = self
+        // Setup camera first
+        self.camera = cameraNode
+        if cameraNode.parent == nil {
+            self.addChild(cameraNode)
+            cameraNode.setScale(1.25)
+        }
+
+        if !hasInitializedWorld {
+            // Preload the background texture
+            let backgroundTexture = SKTexture(imageNamed: "map_land")
+            SKTexture.preload([backgroundTexture]) { [weak self] in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    self.initializeGame(resetState: false, tutorialOn: (self.viewModel?.tutorialIsOn ?? false))
+                    // After initialization, either restore saved position or force tutorial start position
+                    if self.viewModel?.tutorialIsOn == true {
+                        if let player = self.childNode(withName: "userBird") {
+                            player.position = self.tutorialStartPosition
+                            self.cameraNode.position = self.tutorialStartPosition
+                            self.viewModel?.savedPlayerPosition = self.tutorialStartPosition
+                            self.viewModel?.savedCameraPosition = self.cameraNode.position
+                        }
+                    } else {
+                        self.restoreReturnStateIfNeeded()
+                    }
+                }
+            }
+        } else {
+            if viewModel?.mainScene == nil {
+                viewModel?.mainScene = self
+            }
+        }
+        viewModel?.onNestSpawned = { [weak self] in
+                // We call this on the main thread to ensure SpriteKit can add the node
+                DispatchQueue.main.async {
+                    self?.spawnSuccessNest()
+                }
+            }
+        
+        viewModel?.controlsAreVisable = true
+        checkBabyWinCondition()
+    }
+
     func spawnTree(position: CGPoint, size: CGSize, assetName: String, zPosition: Int) {
         let spot = SKSpriteNode(imageNamed: assetName)
         spot.position = position

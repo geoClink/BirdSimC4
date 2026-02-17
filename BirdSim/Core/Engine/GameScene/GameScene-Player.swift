@@ -362,6 +362,19 @@ extension GameScene {
         return nil
     }
 
+
+    // Called when leaving this scene.
+    // Persists player & camera positions.
+    override func willMove(from view: SKView) {
+        // Persist the latest positions before leaving the scene
+        if let player = self.childNode(withName: "userBird") {
+            viewModel?.savedPlayerPosition = player.position
+        }
+        viewModel?.savedCameraPosition = cameraNode.position
+        viewModel?.saveState()
+    }
+    
+    
     // MARK: - UI Helpers
     private enum MiniGameType { case feedBaby, buildNest, feedUser, leaveIsland }
     
