@@ -183,6 +183,9 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         background.position = CGPoint(x: frame.midX, y: frame.midY)
         addChild(background)
         backgroundNode = background
+        SoundManager.shared.playEffect(.carSounds)
+
+        
     }
 
     func setupObstacles() {
@@ -198,6 +201,7 @@ class LeaveIslandScene: SKScene, SKPhysicsContactDelegate {
         let pipeWidth = unit * 0.12
         let pipeHeight = unit
         let randomCenterY = CGFloat.random(in: (unit * 0.2)...(unit * 0.8))
+        
             
         let bottomPipe = SKSpriteNode(imageNamed: pipeType(at: false))
         bottomPipe.position = CGPoint(x: size.width + pipeWidth, y: randomCenterY - (gapHeight / 2) - (pipeHeight / 2))

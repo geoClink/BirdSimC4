@@ -24,6 +24,9 @@ enum SoundEffect: String {
     case pickUp = "grab_effect"
     case building = "hammer_tap"
     case feedSuccess = "feedSuccess"
+    case hatchedBaby = "hatchedBaby"
+    case carSounds = "carEngine"
+    
     
     // --- Apple System Sounds (Built-in) ---
     case tap = "1104"           // Standard UI Tap

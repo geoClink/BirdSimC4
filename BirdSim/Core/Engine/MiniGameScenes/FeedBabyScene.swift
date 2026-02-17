@@ -258,7 +258,7 @@ class FeedBabyScene: SKScene, SKPhysicsContactDelegate {
             let itemNode = (contact.bodyA.categoryBitMask == itemCategory) ? contact.bodyA.node : contact.bodyB.node
             
             if itemNode?.parent != nil {
-                SoundManager.shared.playEffect(.swoosh)
+                SoundManager.shared.playEffect(.feedSuccess)
                 HapticManager.shared.trigger(.success)
                 itemNode?.removeFromParent()
                 caughtCount += 1
