@@ -120,7 +120,7 @@ struct MainMenuView: View {
         case .start: return "Start New Game"
         case .instructions: return "Instructions"
         case .settings: return "Settings"
-        case .gameCenter: return "Game Center"
+        case .gameCenter: return "Achievements"
         }
     }
 
