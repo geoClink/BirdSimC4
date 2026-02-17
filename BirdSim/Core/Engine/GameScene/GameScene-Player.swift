@@ -298,7 +298,7 @@ extension GameScene {
         }
 
         // 3) Feed Self / Leave Island
-        if isNearNode(named: feedUserBirdMini, player: player, threshold: 220) {
+        if isNearNode(named: feedUserBirdMini, player: player, threshold: 220), viewModel.hungerPlayed == false {
             triggerMiniGame(scene: .feedUser)
             return
         }

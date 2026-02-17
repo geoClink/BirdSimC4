@@ -215,6 +215,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         if fullness >= maxFullness {
             viewModel?.userScore += 1
             viewModel?.hunger = 5
+            disableHunger()
             
             if viewModel?.tutorialIsOn == true {
                 // This triggers the UI logic in your ViewModel
@@ -242,6 +243,14 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         viewModel?.mapIsVisable = true
         guard let view = self.view, let existing = viewModel?.mainScene else { return }
         view.presentScene(existing, transition: SKTransition.crossFade(withDuration: 0.5))
+    }
+    
+    func disableHunger() {
+        viewModel?.hungerPlayed = true
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
+            self.viewModel?.hungerPlayed = false
+        }
     }
     
     func randomGoodItem() -> String {

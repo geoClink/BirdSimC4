@@ -53,13 +53,14 @@ extension MainGameView {
         
         @Published var collectedItemsArray: [ImageResource] = []
         
-        @Published var tutorialIsOn: Bool = true
+        @Published var tutorialIsOn: Bool = false
         
         @Published var inventoryFullOnce: Bool = false
         @Published var pickedUpOnce: Bool = false
         @Published var fedBabyOnce: Bool = false
         
         @Published var hasShownPredatorInstruction: Bool = false
+        @Published var hungerPlayed: Bool = false
         @Published var shownInstructionTypes: Set<InstructionType> = []
 
         // SwiftData context & model
@@ -245,13 +246,13 @@ extension MainGameView {
             case .predator:
                 return "Avoid the red zones. Tap or press Space when the needle is in a green zone to escape."
             case .buildNest:
-                return "Memorize the item order, then place items in the same sequence to build your nest."
+                return "Memorize the order of the items. Drag the items from below in the matching pattern onto the cards above."
             case .feedUser:
-                return "Catch good food and avoid bad items. Fill the bar to win. Tilt your device or use controls."
+                return "Catch caterpillers, ladybugs, and berries. Avoid the spiders. Fill the bar to replensish."
             case .feedBaby:
                 return "Cut ropes to drop food into the baby bird mouth. Feed the baby twice before time runs out."
             case .leaveIsland:
-                return "Tap the screen to move bird up. Avoid cars and light poles to escape"
+                return "Tap the screen to move bird up. Avoid cars and light poles to escape Belle Isle."
             }
         }
         
@@ -262,21 +263,21 @@ extension MainGameView {
             case .mapView:
                 return "Keep your bearings. This view helps you track your territory and find resources."
             case .hunger:
-                return "Don't starve! Keep an eye on your hunger bar and find food before your energy runs out."
+                return "You're hunger is low! Visit the yellow caterpiller and keep an eye on your hunger bar. Find food periodically before your energy runs out."
             case .collectItem:
                 return "Foraging: Tap on sticks, leaves, and webs to gather materials for your nest."
             case .nestBuilding:
-                return "Home sweet home. Bring your collected items back to the nest site to begin building."
+                return "Home sweet home. Bring your collected items back to a nesting tree to begin building."
             case .mateFinding:
-                return "The season is here! Search the island to find a mate and start your family."
+                return "Use the map button to help you find your mate!"
             case .feedBaby:
-                return "Hungry hatchlings! Feed your baby twice to help it grow up and leave the nest."
+                return "Hungry hatchlings! Feed your baby twice to help it grow up and leave the nest. Pay attention to the hunger bar and feed before it runs out."
             case .avoidPredator:
-                return "Danger from above! Stay alert and dodge predators to keep yourself safe."
+                return "A predator is near! Stay alert and dodge predators to keep yourself safe."
             case .leaveIsland:
                 return "You've completed the basics. When your journey here is done it's time to fly to warmer lands. Go to the bridge to begin the final minigame."
             case .pickupRemainingItems:
-                return "Almost there! You still need a few more materials to finish your masterpiece."
+                return "Almost there! You still need a few more materials to finish your nest."
             case .retryNest:
                 return "The wind was too strong. Don't give up gather your materials and try building again!"
             }

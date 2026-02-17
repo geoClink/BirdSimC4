@@ -584,7 +584,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                         let distance = sqrt(dx*dx + dy*dy)
                         if distance > 220 || viewModel?.isFlying == true { continue }
                     }
-                    transitionToFeedUserScene()
+                    if viewModel?.hungerPlayed == false {
+                        transitionToFeedUserScene()
+                    }
                     viewModel?.controlsAreVisable = false
                     viewModel?.mapIsVisable = false
                     return
