@@ -12,24 +12,59 @@ extension GameScene {
     // MARK: - Player State
     func applyBirdState(isFlying: Bool) {
         playerSpeed = isFlying ? 650.0 : 400.0
-        birdImage = isFlying ? "Bird_Flying_Open" : "Bird_Ground_Right"
-
-        if isFlying, let bird = self.childNode(withName: "userBird") as? SKSpriteNode {
-            stopWalking(bird)
-        }
-
-        crossFadeBirdTexture(to: birdImage, duration: 0.15)
+        
+        // 1. Update the target image name string
+    
+        birdImage = isFlying ? "Bird_Flying_Up" : "Bird_Ground_Right"
 
         if let bird = self.childNode(withName: "userBird") as? SKSpriteNode {
-            let finalScale: CGFloat = isFlying ? 1.1 : 1.0
-            let pulseUp = SKAction.scale(to: finalScale * 1.06, duration: 0.08)
+            // Always remove any existing birdShadow child node
+            bird.childNode(withName: "birdShadow")?.removeFromParent()
+            
+            if isFlying {
+                stopWalking(bird)
+                
+                // 2. STOP any existing crossfades or texture actions before starting the loop
+                bird.removeAction(forKey: "textureFade")
+                
+                let texture1 = SKTexture(imageNamed: "Bird_Flying_Up")
+                let texture2 = SKTexture(imageNamed: "Bird_Flying_Down")
+                
+                let flapAction = SKAction.animate(with: [texture1, texture2], timePerFrame: 0.15)
+                let repeatFlap = SKAction.repeatForever(flapAction)
+                
+                bird.run(repeatFlap, withKey: "flyingAnimation")
+                
+            } else {
+                // 3. Landing Logic
+                bird.removeAction(forKey: "flyingAnimation")
+                
+                // 4. Run the crossfade ONLY when landing
+                crossFadeBirdTexture(to: "Bird_Ground_Right", duration: 0.15)
+                
+                // Add shadow node only if not already added
+                if bird.childNode(withName: "birdShadow") == nil {
+                    let shadow = SKSpriteNode(imageNamed: birdImage)
+                    shadow.name = "birdShadow"
+                    shadow.size = CGSize(width: 100, height: 100)
+                    shadow.color = .black
+                    shadow.colorBlendFactor = 1.0
+                    shadow.alpha = 0.3
+                    shadow.zPosition = -1
+                    shadow.position = CGPoint(x: 0, y: -8)
+                    bird.addChild(shadow)
+                }
+            }
+
+            // 5. Move the Pulse logic here - it handles scale, not textures, so it won't glitch
+            let finalScale: CGFloat = isFlying ? 2.5 : 1.0
+            let pulseUp = SKAction.scale(to: finalScale * 1.06, duration: 0.00)
             pulseUp.timingMode = .easeOut
             let pulseDown = SKAction.scale(to: finalScale, duration: 0.12)
             pulseDown.timingMode = .easeIn
             bird.run(SKAction.sequence([pulseUp, pulseDown]), withKey: "statePulse")
         }
     }
-
     // MARK: - Player Movement
     
         
@@ -181,7 +216,6 @@ extension GameScene {
         if self.childNode(withName: "userBird") != nil { return }
         
         let player = SKSpriteNode(imageNamed: birdImage)
-        let shadow = SKSpriteNode(imageNamed: birdImage)
         
         player.size = CGSize(width: 100, height: 100)
         
@@ -192,15 +226,8 @@ extension GameScene {
         }
         player.zPosition = 100
         player.name = "userBird"
+        // Removed all shadow logic here to be handled exclusively in applyBirdState
         
-        shadow.size = CGSize(width: 100, height: 100)
-        shadow.color = .black
-        shadow.colorBlendFactor = 1.0
-        shadow.alpha = 0.3
-        shadow.zPosition = -1
-        shadow.position = CGPoint(x: 0, y: -8)
-        
-        player.addChild(shadow)
         player.physicsBody = SKPhysicsBody(circleOfRadius: player.size.width * 0.4)
         player.physicsBody?.isDynamic = true
         player.physicsBody?.affectedByGravity = false
