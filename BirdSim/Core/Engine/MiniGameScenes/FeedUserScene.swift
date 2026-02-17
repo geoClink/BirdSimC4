@@ -188,7 +188,7 @@ class FeedUserScene: SKScene, SKPhysicsContactDelegate {
         let contactMask = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
         let itemNode = (contact.bodyA.categoryBitMask == playerCategory) ? contact.bodyB.node : contact.bodyA.node
         if contactMask == (playerCategory | goodItemCategory) {
-            SoundManager.shared.playEffect(.swoosh)
+            SoundManager.shared.playEffect(.feedSuccess)
                     HapticManager.shared.trigger(.success)
             fullness += 10.0; itemNode?.removeFromParent()
         } else if contactMask == (playerCategory | badItemCategory) {

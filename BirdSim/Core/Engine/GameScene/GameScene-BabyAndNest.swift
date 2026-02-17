@@ -232,7 +232,7 @@ extension GameScene {
         body.isDynamic = false
         body.categoryBitMask = PhysicsCategory.baby
         baby.physicsBody = body
-
+        SoundManager.shared.playEffect(.hatchedBaby)
         nest.addChild(baby)
         
         viewModel?.hasBaby = true
