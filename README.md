@@ -45,36 +45,6 @@ Project structure (high level)
 - BirdSim.xcodeproj/ — Xcode project files and workspace metadata.
 - BirdSimUITests/ — UI test target.
 
-Contribution
-------------
-Contributions are welcome. If you'd like to contribute:
-1. Open an issue to propose a change or report a bug.
-2. Create a small, focused branch and submit a pull request with a clear description.
-
-Consider adding a `CONTRIBUTING.md` for specific coding guidelines and PR workflow.
-
-License
--------
-Add a `LICENSE` file to the repository to clearly state the license (recommended: MIT for permissive usage). If this project already contains a license, keep it intact.
-
-Repo description (one line)
----------------------------
-A SwiftUI + SpriteKit iOS game where you care for birds, build nests, and play integrated mini-games.
-
-Suggested GitHub topics / keywords
----------------------------------
-ios, swift, swiftui, spritekit, game, mobilegame, gamedev, simulation, minigame, bird, wildlife, xcode, indiegaming, educational, physics
-
-Screenshots & media
--------------------
-Add screenshots or a short gameplay video under the repository's README or the `assets/` folder to increase discoverability.
-
-Next steps / suggestions
-------------------------
-- Add `LICENSE` and (optionally) `CONTRIBUTING.md`.
-- Add screenshots/GIFs to the README to showcase gameplay.
-- Add a short CHANGELOG or Roadmap section for future development notes.
-
 Contact
 -------
 Open issues for bugs or feature requests, or use pull requests to propose fixes and enhancements.
